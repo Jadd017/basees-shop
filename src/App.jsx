@@ -5,6 +5,7 @@ import OurStory from './pages/OurStory.jsx'
 import Shop from './pages/Shop.jsx'
 import Category from './pages/Category.jsx'
 import Product from './pages/Product.jsx'
+import Basket from './pages/Basket.jsx'
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -24,6 +25,7 @@ export default function App() {
         <Route path="/shop" element={<Shop />} />
         <Route path="/shop/:category" element={<Category />} />
         <Route path="/product/:id" element={<Product />} />
+        <Route path="/basket" element={<Basket />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>

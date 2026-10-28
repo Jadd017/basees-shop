@@ -1,18 +1,25 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import Header from '../components/Header.jsx'
+import { MAX_QUANTITY, useBasket } from '../context/BasketContext.jsx'
 import { getCategory } from '../data/categories.js'
 import { getProductById } from '../data/sampleProducts.js'
 import { formatPrice } from '../utils/format.js'
 import '../styles/shop.css'
-
-const MAX_QUANTITY = 20
 
 export default function Product() {
   const { id } = useParams()
   const location = useLocation()
   const product = getProductById(id)
   const [quantity, setQuantity] = useState(1)
+  const [added, setAdded] = useState(null) // { quantity } of the last add, for the confirmation
+  const { addItem } = useBasket()
+
+  useEffect(() => {
+    if (!added) return
+    const timer = setTimeout(() => setAdded(null), 3500)
+    return () => clearTimeout(timer)
+  }, [added])
 
   if (!product) {
     return (
@@ -35,7 +42,9 @@ export default function Product() {
   const backTo = location.state?.from ?? `/shop/${product.category}`
 
   const addToBasket = () => {
-    // TODO (phase 3): add { product, quantity } to the basket.
+    addItem(product, quantity)
+    setAdded({ quantity, at: Date.now() })
+    setQuantity(1)
   }
 
   return (
@@ -89,6 +98,20 @@ export default function Product() {
           )}
         </div>
       </main>
+
+      <div className="toast-region" role="status" aria-live="polite">
+        {added && (
+          <div className="toast" key={added.at}>
+            <span>
+              <span aria-hidden="true">✓ </span>
+              Added {added.quantity} × {product.name}
+            </span>
+            <Link to="/basket" className="toast__link">
+              View basket
+            </Link>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
