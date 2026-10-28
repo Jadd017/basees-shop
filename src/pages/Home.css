@@ -48,20 +48,85 @@
   top: 80.5%;
   transform: translateX(-50%);
   display: flex;
-  gap: clamp(10px, 2.4cqw, 20px);
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(2px, 0.6cqh, 8px);
 }
 
-.hero__btn {
-  font-size: clamp(14px, 2.2cqh, 20px);
-  min-height: 0;
-  height: clamp(42px, 6.2cqh, 58px);
-  padding: 0 1.5em;
+.hero__shop-row {
+  display: flex;
+  align-items: center;
+  gap: clamp(4px, 1.2cqw, 10px);
+}
+
+/* Shop Now: olive pill, ~65% of a phone screen wide, capped on desktop */
+.hero__shop {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: min(65vw, 320px);
+  height: clamp(48px, 7.4cqh, 64px);
+  border-radius: 999px;
+  background: var(--olive);
+  color: var(--cream);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(19px, 3cqh, 26px); /* ≥19px bold keeps cream-on-olive readable */
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  white-space: nowrap;
   box-shadow: 0 6px 16px rgb(116 73 41 / 0.3), 0 1px 3px rgb(116 73 41 / 0.2);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.hero__shop:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgb(116 73 41 / 0.32);
+}
+
+.hero__shop:active {
+  transform: translateY(0);
+}
+
+.hero__sparks {
+  flex: none;
+  width: clamp(18px, 3.4cqh, 28px);
+  height: auto;
+  color: var(--brown);
+}
+
+.hero__sparks--right {
+  transform: scaleX(-1);
+}
+
+/* Our Story: plain brown text link, centered under Shop Now */
+.hero__story {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px; /* comfortable tap target */
+  padding: 0 0.75em;
+  color: var(--brown);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: clamp(14px, 2cqh, 18px);
+  text-decoration: none;
+  letter-spacing: 0.02em;
+}
+
+.hero__story:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.hero__shop:focus-visible,
+.hero__story:focus-visible {
+  outline: 3px solid var(--brown);
+  outline-offset: 3px;
+  border-radius: 999px;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero__btn {
+  .hero__shop {
     transition: none;
   }
 }

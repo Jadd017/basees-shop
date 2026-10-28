@@ -2,6 +2,20 @@ import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import './Home.css'
 
+// Three short curved dashes fanning outward (like the marks beside "BASEES !" in the video).
+// Drawn for the left side; the right side is mirrored in CSS.
+function Sparks({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 32 40" aria-hidden="true" focusable="false">
+      <g fill="none" stroke="currentColor" strokeWidth="3.4" strokeLinecap="round">
+        <path d="M27 13 Q19 8 12 3" />
+        <path d="M26 20 Q17 19.5 7 21" />
+        <path d="M27 27 Q19 32 12 37" />
+      </g>
+    </svg>
+  )
+}
+
 export default function Home() {
   const videoRef = useRef(null)
 
@@ -55,11 +69,15 @@ export default function Home() {
           aria-label="Welcome to Basees — pieces made to bring imagination, art, and hope into your everyday life"
         />
         <nav className="hero__actions">
-          <Link to="/our-story" className="btn hero__btn">
+          <div className="hero__shop-row">
+            <Sparks className="hero__sparks" />
+            <Link to="/shop" className="hero__shop">
+              Shop Now
+            </Link>
+            <Sparks className="hero__sparks hero__sparks--right" />
+          </div>
+          <Link to="/our-story" className="hero__story">
             Our Story
-          </Link>
-          <Link to="/shop" className="btn hero__btn">
-            Shop Now
           </Link>
         </nav>
       </div>
