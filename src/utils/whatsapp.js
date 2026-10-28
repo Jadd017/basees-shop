@@ -10,7 +10,7 @@ function itemLabel(item, categories) {
 }
 
 // `categories` (from Firestore) is only used for subcategory labels; it may be empty.
-export function buildOrderMessage({ customer, items, total, categories = [] }) {
+export function buildOrderMessage({ customer, items, subtotal, deliveryFee, categories = [] }) {
   const lines = [
     'New order from Basees website 🛍️',
     '',
@@ -25,9 +25,12 @@ export function buildOrderMessage({ customer, items, total, categories = [] }) {
         )}`,
     ),
     '',
-    `Total: ${formatPrice(total)}`,
+    `Subtotal: ${formatPrice(subtotal)}`,
+    `Delivery: ${formatPrice(deliveryFee)}`,
+    `Total: ${formatPrice(subtotal + deliveryFee)}`,
   ]
   if (customer.note) lines.push(`Note: ${customer.note}`)
+  lines.push('', '✅ Customer agreed to the Terms & Policies')
   return lines.join('\n')
 }
 

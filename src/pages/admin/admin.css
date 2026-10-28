@@ -832,3 +832,28 @@
     animation: none;
   }
 }
+
+/* ---------- Settings ---------- */
+
+.admin-settings__save {
+  width: 100%;
+  min-height: 50px;
+  margin-top: 0.25rem;
+}
+
+.admin-terms {
+  min-height: 50vh;
+}
+
+/* Four tabs must fit a 390px phone */
+@media (max-width: 480px) {
+  .admin-tabs {
+    gap: 0.15rem;
+    padding-inline: 0.5rem;
+  }
+
+  .admin-tabs__tab {
+    font-size: 0.85rem;
+    padding: 0 0.25rem;
+  }
+}

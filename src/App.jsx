@@ -14,6 +14,7 @@ const AdminProductForm = lazy(() => import('./pages/admin/AdminProductForm.jsx')
 const AdminCategories = lazy(() => import('./pages/admin/AdminCategories.jsx'))
 const AdminCategoryForm = lazy(() => import('./pages/admin/AdminCategoryForm.jsx'))
 const AdminStory = lazy(() => import('./pages/admin/AdminStory.jsx'))
+const AdminSettings = lazy(() => import('./pages/admin/AdminSettings.jsx'))
 
 function ScrollToTop() {
   const { pathname } = useLocation()
@@ -43,6 +44,7 @@ export default function App() {
             <Route path="categories/new" element={<AdminCategoryForm />} />
             <Route path="categories/:id" element={<AdminCategoryForm />} />
             <Route path="story" element={<AdminStory />} />
+            <Route path="settings" element={<AdminSettings />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

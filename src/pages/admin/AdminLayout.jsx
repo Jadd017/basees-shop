@@ -87,6 +87,9 @@ export default function AdminLayout() {
         <NavLink to="/admin/story" className="admin-tabs__tab">
           Our Story
         </NavLink>
+        <NavLink to="/admin/settings" className="admin-tabs__tab">
+          Settings
+        </NavLink>
       </nav>
       <main className="admin-main">
         <Outlet />

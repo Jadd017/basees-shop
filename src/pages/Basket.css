@@ -116,18 +116,45 @@
 
 /* ---------- Total & clear ---------- */
 
-.basket__total {
+.basket__summary {
+  margin: 0;
+  padding: 0.85rem 0 0.5rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.basket__summary-row {
   display: flex;
   justify-content: space-between;
   align-items: baseline;
-  padding: 1rem 0 0.5rem;
-  font-family: var(--font-display);
-  font-size: 1.25rem;
   font-weight: 600;
 }
 
-.basket__total strong {
-  font-size: 1.5rem;
+.basket__summary-row dt,
+.basket__summary-row dd {
+  margin: 0;
+}
+
+.basket__summary-row dd {
+  font-weight: 700;
+}
+
+/* Total: the biggest and boldest line */
+.basket__total {
+  margin-top: 0.35rem;
+  padding-top: 0.6rem;
+  border-top: 2px solid var(--sage);
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+}
+
+.basket__total dt {
+  font-weight: 600;
+}
+
+.basket__total dd {
+  font-size: 1.6rem;
+  font-weight: 700;
 }
 
 .basket__clear {
@@ -245,4 +272,126 @@
   background: var(--sage);
   font-weight: 700;
   font-size: 0.9rem;
+}
+
+/* ---------- Terms & Policies ---------- */
+
+.terms {
+  margin: 0.5rem 0 1rem;
+  padding: 0.9rem 1rem 0.4rem;
+  border-radius: 1rem;
+  background: var(--cream);
+  border: 1px solid var(--sage);
+  color: var(--brown);
+}
+
+.terms__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.25rem;
+}
+
+.terms__title {
+  margin: 0;
+  font-size: 1.1rem;
+  color: var(--olive);
+}
+
+.terms__all {
+  flex: none;
+  min-height: 36px;
+  padding: 0 0.25rem;
+  border: 0;
+  background: none;
+  color: var(--brown);
+  font: 700 0.85rem var(--font-body);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.terms__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.terms__item + .terms__item {
+  border-top: 1px solid var(--sage);
+}
+
+.terms__toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 48px; /* comfortable tap target */
+  padding: 0.4rem 0;
+  border: 0;
+  background: none;
+  color: var(--olive);
+  font: 700 0.98rem/1.3 var(--font-body);
+  text-align: start;
+  cursor: pointer;
+}
+
+.terms__chevron {
+  flex: none;
+  width: 9px;
+  height: 9px;
+  margin-right: 4px;
+  border-right: 2px solid var(--brown);
+  border-bottom: 2px solid var(--brown);
+  transform: rotate(45deg) translateY(-3px);
+  transition: transform 0.2s ease;
+}
+
+.terms__item.is-open .terms__chevron {
+  transform: rotate(-135deg) translateY(-2px);
+}
+
+.terms__body {
+  padding: 0 0 0.85rem;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.terms__toggle:focus-visible,
+.terms__all:focus-visible {
+  outline: 3px solid var(--olive);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* ---------- Agreement checkbox ---------- */
+
+.agree {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.7rem;
+  margin: 0 0 0.75rem;
+  padding: 0.25rem 0;
+  font-weight: 700;
+  font-size: 0.95rem;
+  line-height: 1.4;
+  cursor: pointer;
+}
+
+.agree input {
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  accent-color: var(--brown);
+  cursor: pointer;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .terms__chevron {
+    transition: none;
+  }
 }

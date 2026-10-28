@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Header from '../components/Header.jsx'
+import TermsPolicies from '../components/TermsPolicies.jsx'
 import { MAX_QUANTITY, useBasket } from '../context/BasketContext.jsx'
+import { DEFAULT_TERMS, parseTerms } from '../data/defaultTerms.js'
 import { useCategories } from '../hooks/useCategories.js'
 import { fetchProduct } from '../services/products.js'
+import { DEFAULT_DELIVERY_FEE, fetchDeliveryFee, fetchTerms } from '../services/settings.js'
 import { formatPrice } from '../utils/format.js'
 import { buildOrderMessage, buildWhatsAppUrl } from '../utils/whatsapp.js'
 import '../styles/shop.css'
@@ -33,10 +36,33 @@ function validate(customer) {
 }
 
 export default function Basket() {
-  const { items, total, setQuantity, syncItems, removeItem, clear } = useBasket()
-  const { categories } = useCategories()
+  const { items, subtotal, setQuantity, syncItems, removeItem, clear } = useBasket()
+  const { status: categoriesStatus, categories } = useCategories()
   const [customer, setCustomer] = useState(loadCustomer)
   const [errors, setErrors] = useState({})
+  const [agreed, setAgreed] = useState(false)
+  const [deliveryFee, setDeliveryFee] = useState(null) // null while loading
+  const [policies, setPolicies] = useState(null) // null while loading
+
+  // Delivery fee and Terms & Policies are set by the owner in the admin.
+  useEffect(() => {
+    let cancelled = false
+    fetchDeliveryFee()
+      .catch((error) => {
+        console.error(error)
+        return DEFAULT_DELIVERY_FEE
+      })
+      .then((fee) => !cancelled && setDeliveryFee(fee))
+    fetchTerms()
+      .catch((error) => {
+        console.error(error)
+        return ''
+      })
+      .then((text) => !cancelled && setPolicies(parseTerms(text.trim() || DEFAULT_TERMS)))
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   // Re-check prices and availability once when the basket opens (not on every change).
   const [checking, setChecking] = useState(items.length > 0)
@@ -54,6 +80,8 @@ export default function Basket() {
   }, [])
 
   const unavailableItems = items.filter((item) => item.unavailable)
+  // Wait for prices, the delivery fee and category names (used for labels in the message).
+  const loading = checking || deliveryFee === null || categoriesStatus === 'loading'
 
   useEffect(() => {
     try {
@@ -74,7 +102,7 @@ export default function Basket() {
 
   const placeOrder = (event) => {
     event.preventDefault()
-    if (checking || unavailableItems.length > 0) return
+    if (loading || !agreed || unavailableItems.length > 0) return
     const found = validate(customer)
     setErrors(found)
     if (Object.keys(found).length > 0) {
@@ -84,7 +112,7 @@ export default function Basket() {
     }
 
     const trimmed = Object.fromEntries(Object.entries(customer).map(([k, v]) => [k, v.trim()]))
-    const url = buildWhatsAppUrl(buildOrderMessage({ customer: trimmed, items, total, categories }))
+    const url = buildWhatsAppUrl(buildOrderMessage({ customer: trimmed, items, subtotal, deliveryFee, categories }))
     // New tab on desktop; if a popup blocker stops it, open in this tab instead.
     // The basket is intentionally kept so the customer can come back to it.
     const opened = window.open(url, '_blank')
@@ -163,10 +191,20 @@ export default function Basket() {
                 ))}
               </ul>
 
-              <div className="basket__total">
-                <span>Total</span>
-                <strong>{formatPrice(total)}</strong>
-              </div>
+              <dl className="basket__summary">
+                <div className="basket__summary-row">
+                  <dt>Subtotal</dt>
+                  <dd>{formatPrice(subtotal)}</dd>
+                </div>
+                <div className="basket__summary-row">
+                  <dt>Delivery</dt>
+                  <dd>{deliveryFee === null ? '…' : formatPrice(deliveryFee)}</dd>
+                </div>
+                <div className="basket__summary-row basket__total">
+                  <dt>Total</dt>
+                  <dd>{deliveryFee === null ? '…' : formatPrice(subtotal + deliveryFee)}</dd>
+                </div>
+              </dl>
 
               <button type="button" className="btn btn--ghost basket__clear" onClick={clearBasket}>
                 Clear basket
@@ -221,6 +259,19 @@ export default function Basket() {
                 />
               </Field>
 
+              <TermsPolicies policies={policies} />
+
+              <label className="agree">
+                <input
+                  type="checkbox"
+                  name="agree"
+                  checked={agreed}
+                  onChange={(e) => setAgreed(e.target.checked)}
+                  required
+                />
+                <span>I have read and agree to the Basees Terms &amp; Policies</span>
+              </label>
+
               {unavailableItems.length > 0 && (
                 <p className="order-form__blocked" role="alert">
                   Some pieces in your basket are no longer available. Please remove them to continue.
@@ -229,9 +280,9 @@ export default function Basket() {
               <button
                 type="submit"
                 className="btn order-form__submit"
-                disabled={checking || unavailableItems.length > 0}
+                disabled={loading || !agreed || unavailableItems.length > 0}
               >
-                {checking ? 'Checking prices…' : 'Order now on WhatsApp'}
+                {loading ? 'Checking prices…' : 'Order now on WhatsApp'}
               </button>
             </form>
           </>

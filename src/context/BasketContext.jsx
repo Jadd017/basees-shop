@@ -71,11 +71,12 @@ export function BasketProvider({ children }) {
     const clear = () => setItems([])
 
     const count = items.reduce((sum, item) => sum + item.quantity, 0)
-    const total = items
+    // Items only — the delivery fee is added on the basket page.
+    const subtotal = items
       .filter((item) => !item.unavailable)
       .reduce((sum, item) => sum + item.price * item.quantity, 0)
 
-    return { items, count, total, addItem, setQuantity, syncItems, removeItem, clear }
+    return { items, count, subtotal, addItem, setQuantity, syncItems, removeItem, clear }
   }, [items])
 
   return <BasketContext.Provider value={value}>{children}</BasketContext.Provider>
