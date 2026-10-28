@@ -7,13 +7,13 @@ import {
   signInWithRedirect,
   signOut as firebaseSignOut,
 } from 'firebase/auth'
-import { ADMIN_EMAIL, app } from '../../firebase.js'
+import { ADMIN_EMAILS, app } from '../../firebase.js'
 
 const auth = getAuth(app)
 
 export function isOwner(user) {
   return Boolean(
-    user && ADMIN_EMAIL && user.emailVerified && user.email?.toLowerCase() === ADMIN_EMAIL,
+    user && user.emailVerified && ADMIN_EMAILS.includes(user.email?.toLowerCase()),
   )
 }
 

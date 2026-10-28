@@ -4,11 +4,14 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // The shop owner — must match VITE_ADMIN_EMAIL in .env.
+    // The shop admins — must match VITE_ADMIN_EMAILS in .env.
     function isOwner() {
       return request.auth != null
         && request.auth.token.email_verified == true
-        && request.auth.token.email.lower() == 'owner@example.com';
+        && request.auth.token.email.lower() in [
+          'owner@example.com',
+          'admin@example.com'
+        ];
     }
 
     // Catch typos in what the admin writes (e.g. a price saved as text).
@@ -23,7 +26,7 @@ service cloud.firestore {
         && p.available is bool;
     }
 
-    // Anyone can read; only the owner can create, update or delete.
+    // Anyone can read; only the admins can create, update or delete.
     match /products/{productId} {
       allow read: if true;
       allow create, update: if isOwner() && validProduct(request.resource.data);
