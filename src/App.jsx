@@ -11,6 +11,8 @@ import Basket from './pages/Basket.jsx'
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout.jsx'))
 const AdminProducts = lazy(() => import('./pages/admin/AdminProducts.jsx'))
 const AdminProductForm = lazy(() => import('./pages/admin/AdminProductForm.jsx'))
+const AdminCategories = lazy(() => import('./pages/admin/AdminCategories.jsx'))
+const AdminCategoryForm = lazy(() => import('./pages/admin/AdminCategoryForm.jsx'))
 const AdminStory = lazy(() => import('./pages/admin/AdminStory.jsx'))
 
 function ScrollToTop() {
@@ -37,6 +39,9 @@ export default function App() {
             <Route index element={<AdminProducts />} />
             <Route path="products/new" element={<AdminProductForm />} />
             <Route path="products/:id" element={<AdminProductForm />} />
+            <Route path="categories" element={<AdminCategories />} />
+            <Route path="categories/new" element={<AdminCategoryForm />} />
+            <Route path="categories/:id" element={<AdminCategoryForm />} />
             <Route path="story" element={<AdminStory />} />
           </Route>
           <Route path="*" element={<Navigate to="/" replace />} />

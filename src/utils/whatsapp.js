@@ -1,15 +1,16 @@
-import { getCategory } from '../data/categories.js'
+import { findCategory, findSubcategory } from '../services/categories.js'
 import { formatPrice } from './format.js'
 
 export const WHATSAPP_NUMBER = '9613560523'
 
-// "Dessert candles – Strawberry Cake Candle" for candles, otherwise just the name.
-function itemLabel(item) {
-  const sub = getCategory(item.category)?.subcategories?.find((s) => s.id === item.subcategory)
+// "Dessert candles – Strawberry Cake Candle" when the item has a subcategory, otherwise the name.
+function itemLabel(item, categories) {
+  const sub = findSubcategory(findCategory(categories, item.category), item.subcategory)
   return sub ? `${sub.name} – ${item.name}` : item.name
 }
 
-export function buildOrderMessage({ customer, items, total }) {
+// `categories` (from Firestore) is only used for subcategory labels; it may be empty.
+export function buildOrderMessage({ customer, items, total, categories = [] }) {
   const lines = [
     'New order from Basees website 🛍️',
     '',
@@ -19,7 +20,7 @@ export function buildOrderMessage({ customer, items, total }) {
     '',
     ...items.map(
       (item) =>
-        `• ${item.quantity} × ${itemLabel(item)} (${formatPrice(item.price)} each) = ${formatPrice(
+        `• ${item.quantity} × ${itemLabel(item, categories)} (${formatPrice(item.price)} each) = ${formatPrice(
           item.price * item.quantity,
         )}`,
     ),

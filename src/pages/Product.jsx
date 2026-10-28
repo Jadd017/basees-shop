@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import Header from '../components/Header.jsx'
 import { MAX_QUANTITY, useBasket } from '../context/BasketContext.jsx'
-import { getCategory } from '../data/categories.js'
+import { useCategories } from '../hooks/useCategories.js'
+import { findCategory, findSubcategory } from '../services/categories.js'
 import { fetchProduct, fetchProductImage, getCachedProduct } from '../services/products.js'
 import { formatPrice } from '../utils/format.js'
 import '../styles/shop.css'
@@ -11,6 +12,7 @@ export default function Product() {
   const { id } = useParams()
   const location = useLocation()
   const { addItem } = useBasket()
+  const { categories } = useCategories()
 
   // Coming from a category page the product is already cached, so it shows instantly.
   const cached = getCachedProduct(id)
@@ -92,8 +94,8 @@ export default function Product() {
   }
 
   const { product } = state
-  const category = getCategory(product.category)
-  const subcategory = category?.subcategories?.find((s) => s.id === product.subcategory)
+  const category = findCategory(categories, product.category)
+  const subcategory = findSubcategory(category, product.subcategory)
   const backTo = location.state?.from ?? `/shop/${product.category}`
 
   const addToBasket = () => {

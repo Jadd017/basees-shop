@@ -26,6 +26,13 @@ service cloud.firestore {
         && p.available is bool;
     }
 
+    function validCategory(c) {
+      return c.name is string && c.name.size() > 0
+        && c.order is number
+        && c.subcategories is list
+        && (!('coverImage' in c) || c.coverImage == null || c.coverImage is string);
+    }
+
     // Anyone can read; only the admins can create, update or delete.
     match /products/{productId} {
       allow read: if true;
@@ -36,6 +43,13 @@ service cloud.firestore {
     match /productImages/{productId} {
       allow read: if true;
       allow create, update, delete: if isOwner();
+    }
+
+    // Shop categories. The document id is permanent (products store it).
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow create, update: if isOwner() && validCategory(request.resource.data);
+      allow delete: if isOwner();
     }
 
     match /settings/{docId} {

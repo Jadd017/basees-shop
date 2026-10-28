@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom'
 import Header from '../components/Header.jsx'
 import ProductCard from '../components/ProductCard.jsx'
-import { getCategory } from '../data/categories.js'
+import { useCategories } from '../hooks/useCategories.js'
+import { findCategory } from '../services/categories.js'
 import { fetchProductsByCategory } from '../services/products.js'
 import '../styles/shop.css'
 
@@ -10,17 +11,17 @@ export default function Category() {
   const { category: categoryId } = useParams()
   const [searchParams, setSearchParams] = useSearchParams()
   const location = useLocation()
-  const category = getCategory(categoryId)
+  const categoriesState = useCategories()
+  const category = findCategory(categoriesState.categories, categoryId)
 
   // { status: 'loading' | 'ready' | 'error', products }
   const [state, setState] = useState({ status: 'loading', products: [] })
   const [attempt, setAttempt] = useState(0)
 
   useEffect(() => {
-    if (!category) return
     let cancelled = false
     setState({ status: 'loading', products: [] })
-    fetchProductsByCategory(category.id)
+    fetchProductsByCategory(categoryId)
       .then((products) => !cancelled && setState({ status: 'ready', products }))
       .catch((error) => {
         console.error(error)
@@ -29,7 +30,32 @@ export default function Category() {
     return () => {
       cancelled = true
     }
-  }, [category, attempt])
+  }, [categoryId, attempt])
+
+  if (categoriesState.status === 'loading') {
+    return (
+      <div className="bg-page">
+        <Header backTo="/shop" backLabel="Shop" />
+        <main className="shop" aria-busy="true" />
+      </div>
+    )
+  }
+
+  if (categoriesState.status === 'error') {
+    return (
+      <div className="bg-page">
+        <Header backTo="/shop" backLabel="Shop" />
+        <main className="shop">
+          <div className="empty">
+            <p className="empty__text">We couldn’t load the shop. Please check your connection.</p>
+            <button type="button" className="btn" onClick={categoriesState.retry}>
+              Try again
+            </button>
+          </div>
+        </main>
+      </div>
+    )
+  }
 
   if (!category) {
     return (
@@ -63,7 +89,9 @@ export default function Category() {
     <div className="bg-page">
       <Header backTo="/shop" backLabel="Shop" />
       <main className="shop">
-        <h1 className="shop__title">{category.name}</h1>
+        <h1 className="shop__title" dir="auto">
+          {category.name}
+        </h1>
 
         {subcategories.length > 0 && (
           <div className="chips" role="group" aria-label="Filter by type">

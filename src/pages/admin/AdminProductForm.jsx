@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
-import { categories, getCategory } from '../../data/categories.js'
+import { useCategories } from '../../hooks/useCategories.js'
+import { findCategory } from '../../services/categories.js'
 import {
   createProduct,
   deleteProduct,
@@ -21,14 +22,14 @@ const emptyForm = {
   available: true,
 }
 
-function validate(form, hasImage) {
+function validate(form, hasImage, category) {
   const errors = {}
   if (!form.name.trim()) errors.name = 'Enter a name.'
   const price = Number(String(form.price).replace(',', '.'))
   if (form.price === '' || !Number.isFinite(price) || price <= 0) errors.price = 'Enter a price, e.g. 12 or 12.50.'
   if (!form.category) errors.category = 'Choose a category.'
-  else if (getCategory(form.category)?.subcategories && !form.subcategory)
-    errors.subcategory = 'Choose a candle type.'
+  else if (category?.subcategories?.length && !form.subcategory)
+    errors.subcategory = 'Choose a subcategory.'
   if (!form.shortDescription.trim()) errors.shortDescription = 'Enter a short description.'
   if (!form.fullDescription.trim()) errors.fullDescription = 'Enter a full description.'
   if (!hasImage) errors.image = 'Add a photo.'
@@ -41,6 +42,7 @@ export default function AdminProductForm() {
   const navigate = useNavigate()
   const location = useLocation()
   const fileInput = useRef(null)
+  const { status: categoriesStatus, categories } = useCategories()
 
   const [form, setForm] = useState(() => ({
     ...emptyForm,
@@ -77,7 +79,7 @@ export default function AdminProductForm() {
       })
   }, [id, isNew])
 
-  const category = getCategory(form.category)
+  const category = findCategory(categories, form.category)
 
   const set = (field) => (event) => {
     const value = event.target.type === 'checkbox' ? event.target.checked : event.target.value
@@ -109,7 +111,7 @@ export default function AdminProductForm() {
   const save = async (event) => {
     event.preventDefault()
     setSaveError('')
-    const found = validate(form, Boolean(images || currentThumb))
+    const found = validate(form, Boolean(images || currentThumb), category)
     setErrors(found)
     if (Object.keys(found).length > 0) {
       const first = Object.keys(found)[0]
@@ -121,7 +123,7 @@ export default function AdminProductForm() {
       name: form.name.trim(),
       price: Math.round(Number(String(form.price).replace(',', '.')) * 100) / 100,
       category: form.category,
-      subcategory: category?.subcategories ? form.subcategory : null,
+      subcategory: category?.subcategories?.length ? form.subcategory : null,
       shortDescription: form.shortDescription.trim(),
       fullDescription: form.fullDescription.trim(),
       available: form.available,
@@ -260,9 +262,18 @@ export default function AdminProductForm() {
         </Field>
 
         <Field id="category" label="Category" error={errors.category}>
-          <select id="field-category" value={form.category} onChange={set('category')}>
+          <select
+            id="field-category"
+            value={form.category}
+            onChange={set('category')}
+            disabled={categoriesStatus !== 'ready'}
+          >
             <option value="" disabled>
-              Choose…
+              {categoriesStatus === 'loading'
+                ? 'Loading categories…'
+                : categoriesStatus === 'error'
+                  ? 'Couldn’t load categories — refresh'
+                  : 'Choose…'}
             </option>
             {categories.map((c) => (
               <option key={c.id} value={c.id}>
@@ -272,8 +283,8 @@ export default function AdminProductForm() {
           </select>
         </Field>
 
-        {category?.subcategories && (
-          <Field id="subcategory" label="Candle type" error={errors.subcategory}>
+        {category?.subcategories?.length > 0 && (
+          <Field id="subcategory" label="Subcategory" error={errors.subcategory}>
             <select id="field-subcategory" value={form.subcategory} onChange={set('subcategory')}>
               <option value="" disabled>
                 Choose…

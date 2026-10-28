@@ -15,6 +15,7 @@
 .admin {
   min-height: 100vh;
   min-height: 100dvh;
+  overflow-x: clip; /* no sideways wobble on phones */
 }
 
 .admin-main {
@@ -391,6 +392,7 @@
 
 .admin-form {
   display: grid;
+  grid-template-columns: minmax(0, 1fr); /* never wider than the screen */
   gap: 1rem;
 }
 
@@ -560,4 +562,133 @@
     border: 1px solid var(--sage);
     border-radius: 1rem;
   }
+}
+
+/* ---------- Categories ---------- */
+
+.admin-toolbar__text {
+  flex: 1;
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--olive);
+}
+
+.admin-item--row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-item--row .admin-item__main {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-order {
+  display: flex;
+  gap: 0.35rem;
+  flex: none;
+}
+
+.admin-order__btn {
+  width: 44px;
+  height: 44px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--brown);
+  border-radius: 50%;
+  background: var(--cream);
+  color: var(--brown);
+  font: 700 1.1rem/1 var(--font-body);
+  cursor: pointer;
+}
+
+.admin-order__btn:hover:not(:disabled) {
+  background: var(--sage);
+}
+
+.admin-order__btn:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.admin-order__btn--danger {
+  border-color: transparent;
+  font-size: 1rem;
+}
+
+.admin-section-title {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.admin-hint--top {
+  margin: 0.2rem 0 0.85rem;
+}
+
+.admin-error--small {
+  margin: 0.4rem 0 0;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+.admin-inline-link {
+  white-space: nowrap;
+}
+
+.cover-picker {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.cover-picker__preview {
+  width: 60%;
+  max-width: 16rem;
+  aspect-ratio: 4 / 3;
+}
+
+.cover-picker__actions {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.sub-list {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.sub-list__row,
+.sub-add {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.sub-list__row input,
+.sub-add input {
+  flex: 1;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid var(--sage);
+  border-radius: 0.75rem;
+  background: var(--cream);
+  color: var(--brown);
+  font: 1rem/1.4 var(--font-body);
+}
+
+.sub-list__row input:focus,
+.sub-add input:focus {
+  outline: none;
+  border-color: var(--olive);
+}
+
+.sub-add .admin-item__btn {
+  min-height: 44px;
 }

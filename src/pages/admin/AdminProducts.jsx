@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
-import { categories, getCategory } from '../../data/categories.js'
+import { useCategories } from '../../hooks/useCategories.js'
+import { findCategory, findSubcategory } from '../../services/categories.js'
 import { deleteProduct, fetchAllProducts, setProductAvailable } from '../../services/products.js'
 import { formatPrice } from '../../utils/format.js'
 
-export function categoryLabel(product) {
-  const category = getCategory(product.category)
-  const sub = category?.subcategories?.find((s) => s.id === product.subcategory)
+export function categoryLabel(product, categories) {
+  const category = findCategory(categories, product.category)
+  const sub = findSubcategory(category, product.subcategory)
   return sub ? `${category.name} · ${sub.name}` : category?.name ?? product.category
 }
 
@@ -15,6 +16,7 @@ export default function AdminProducts() {
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const filter = searchParams.get('category') ?? ''
+  const { categories } = useCategories()
 
   const [products, setProducts] = useState(null) // null while loading
   const [error, setError] = useState('')
@@ -140,7 +142,7 @@ export default function AdminProducts() {
                   <span className="admin-item__text">
                     <span className="admin-item__name">{product.name}</span>
                     <span className="admin-item__meta">
-                      {formatPrice(product.price)} · {categoryLabel(product)}
+                      {formatPrice(product.price)} · {categoryLabel(product, categories)}
                     </span>
                   </span>
                 </Link>

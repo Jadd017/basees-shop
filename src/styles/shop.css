@@ -121,46 +121,66 @@
 }
 
 .category-card {
-  position: relative;
-  overflow: hidden;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 1rem;
   height: 100%;
-  min-height: 8.5rem;
-  padding: 1rem;
+  overflow: hidden;
   border-radius: 1.25rem;
-  background: var(--sage);
+  background: var(--cream);
   border: 2px solid var(--sage);
   text-decoration: none;
   box-shadow: 0 4px 14px rgb(116 73 41 / 0.12);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-/* Checkerboard of sage / cream cards (works for the 2-column phone grid) */
-.category-grid li:nth-child(4n + 2) .category-card,
-.category-grid li:nth-child(4n + 3) .category-card {
-  background: var(--cream);
+/* Cover image, or a soft sage tile with a decorative circle when there's none */
+.category-card__media {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 3;
+  overflow: hidden;
+  background: var(--sage);
 }
 
-/* Soft decorative circle in the corner */
-.category-card::after {
+.category-card__media::after {
   content: '';
   position: absolute;
-  right: -1.5rem;
-  bottom: -1.5rem;
+  right: -1.25rem;
+  bottom: -1.25rem;
   width: 4.5rem;
   height: 4.5rem;
   border-radius: 50%;
   background: var(--olive);
-  opacity: 0.18;
+  opacity: 0.2;
+}
+
+/* Alternate the empty tiles so a grid without covers still has rhythm */
+.category-grid li:nth-child(even) .category-card__media {
+  background: rgb(140 131 87 / 0.28);
+}
+
+.category-card__media img {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.category-card__body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 0.4rem;
+  padding: 0.7rem 0.85rem 0.8rem;
 }
 
 .category-card__name {
   font-family: var(--font-display);
   font-weight: 600;
-  font-size: 1.15rem;
+  font-size: 1.05rem;
   line-height: 1.25;
 }
 
@@ -181,24 +201,18 @@
   outline-offset: 3px;
 }
 
+.category-card--skeleton .category-card__media {
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
 @media (min-width: 720px) {
   .category-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 1rem;
   }
 
-  /* Re-do the checkerboard for 4 columns */
-  .category-grid li:nth-child(n) .category-card {
-    background: var(--sage);
-  }
-  .category-grid li:nth-child(odd):nth-child(-n + 4) .category-card,
-  .category-grid li:nth-child(even):nth-child(n + 5) .category-card {
-    background: var(--cream);
-  }
-
-  .category-card {
-    min-height: 10rem;
-    padding: 1.25rem;
+  .category-card__name {
+    font-size: 1.15rem;
   }
 }
 
@@ -523,6 +537,7 @@
 @media (prefers-reduced-motion: reduce) {
   .product__full,
   .product-card--skeleton .product-card__media,
+  .category-card--skeleton .category-card__media,
   .product[aria-busy='true'] .product__media,
   .skeleton-line,
   .toast,

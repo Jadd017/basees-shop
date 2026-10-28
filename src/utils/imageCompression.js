@@ -90,6 +90,16 @@ export async function compressProductImage(file) {
   }
 }
 
+// Category covers: a single thumbnail-sized image, same settings as product thumbnails.
+export async function compressThumbnailImage(file) {
+  const source = await decode(file)
+  try {
+    return compress(source, THUMBNAIL)
+  } finally {
+    source.close?.()
+  }
+}
+
 export function formatBytes(bytes) {
   return bytes >= 1_000_000 ? `${(bytes / 1_000_000).toFixed(1)} MB` : `${Math.round(bytes / 1000)} KB`
 }

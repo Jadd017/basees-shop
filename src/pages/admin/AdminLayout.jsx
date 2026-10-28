@@ -81,6 +81,9 @@ export default function AdminLayout() {
         <NavLink to="/admin" end className="admin-tabs__tab">
           Products
         </NavLink>
+        <NavLink to="/admin/categories" className="admin-tabs__tab">
+          Categories
+        </NavLink>
         <NavLink to="/admin/story" className="admin-tabs__tab">
           Our Story
         </NavLink>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Header from '../components/Header.jsx'
 import { MAX_QUANTITY, useBasket } from '../context/BasketContext.jsx'
+import { useCategories } from '../hooks/useCategories.js'
 import { fetchProduct } from '../services/products.js'
 import { formatPrice } from '../utils/format.js'
 import { buildOrderMessage, buildWhatsAppUrl } from '../utils/whatsapp.js'
@@ -33,6 +34,7 @@ function validate(customer) {
 
 export default function Basket() {
   const { items, total, setQuantity, syncItems, removeItem, clear } = useBasket()
+  const { categories } = useCategories()
   const [customer, setCustomer] = useState(loadCustomer)
   const [errors, setErrors] = useState({})
 
@@ -82,7 +84,7 @@ export default function Basket() {
     }
 
     const trimmed = Object.fromEntries(Object.entries(customer).map(([k, v]) => [k, v.trim()]))
-    const url = buildWhatsAppUrl(buildOrderMessage({ customer: trimmed, items, total }))
+    const url = buildWhatsAppUrl(buildOrderMessage({ customer: trimmed, items, total, categories }))
     // New tab on desktop; if a popup blocker stops it, open in this tab instead.
     // The basket is intentionally kept so the customer can come back to it.
     const opened = window.open(url, '_blank')
