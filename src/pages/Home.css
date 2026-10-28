@@ -1,0 +1,67 @@
+/*
+  hero.mp4 is 1080×1528 (portrait). Its text block spans roughly 11%–89% of the
+  width, so we may trim at most ~8% per side. The frame always keeps the video's
+  exact aspect ratio (so object-fit never crops vertically):
+
+  - Phones: frame width ≈ 120% of the screen → fills the screen, trimming only the
+    decorative side edges. Any leftover height is cream, which matches the video.
+  - Wide screens: frame is full height, centered, cream fills the sides.
+*/
+.hero {
+  --ratio: calc(1528 / 1080); /* height / width */
+
+  position: relative;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--cream);
+}
+
+.hero__frame {
+  position: relative;
+  flex: none;
+  height: min(100vh, 120vw * var(--ratio));
+  height: min(100dvh, 120vw * var(--ratio));
+  aspect-ratio: 1080 / 1528;
+  container-type: size;
+}
+
+.hero__video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: var(--cream);
+}
+
+/*
+  Buttons sit in the free band of the video: below the
+  "pieces made to bring imagination…" line and its divider (~77%),
+  above the bottom edge, between the mushrooms.
+*/
+.hero__actions {
+  position: absolute;
+  left: 50%;
+  top: 80.5%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: clamp(10px, 2.4cqw, 20px);
+  justify-content: center;
+}
+
+.hero__btn {
+  font-size: clamp(14px, 2.2cqh, 20px);
+  min-height: 0;
+  height: clamp(42px, 6.2cqh, 58px);
+  padding: 0 1.5em;
+  box-shadow: 0 6px 16px rgb(116 73 41 / 0.3), 0 1px 3px rgb(116 73 41 / 0.2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero__btn {
+    transition: none;
+  }
+}
