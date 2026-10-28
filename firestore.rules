@@ -1,0 +1,45 @@
+rules_version = '2';
+
+// Deploy with:  npx firebase-tools deploy --only firestore:rules
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // The shop owner — must match VITE_ADMIN_EMAIL in .env.
+    function isOwner() {
+      return request.auth != null
+        && request.auth.token.email_verified == true
+        && request.auth.token.email.lower() == 'owner@example.com';
+    }
+
+    // Catch typos in what the admin writes (e.g. a price saved as text).
+    function validProduct(p) {
+      return p.name is string && p.name.size() > 0
+        && p.price is number && p.price > 0
+        && p.category is string
+        && (p.subcategory == null || p.subcategory is string)
+        && p.shortDescription is string
+        && p.fullDescription is string
+        && p.thumbnail is string
+        && p.available is bool;
+    }
+
+    // Anyone can read; only the owner can create, update or delete.
+    match /products/{productId} {
+      allow read: if true;
+      allow create, update: if isOwner() && validProduct(request.resource.data);
+      allow delete: if isOwner();
+    }
+
+    match /productImages/{productId} {
+      allow read: if true;
+      allow create, update, delete: if isOwner();
+    }
+
+    match /settings/{docId} {
+      allow read: if true;
+      allow create, update, delete: if isOwner();
+    }
+
+    // Everything else stays locked (no rule = denied).
+  }
+}

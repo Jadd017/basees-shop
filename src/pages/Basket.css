@@ -221,3 +221,28 @@
     grid-column: 1 / -1;
   }
 }
+
+/* ---------- Unavailable items ---------- */
+
+.basket-item--unavailable .basket-item__img,
+.basket-item--unavailable .basket-item__name,
+.basket-item--unavailable .basket-item__line {
+  opacity: 0.45;
+}
+
+.basket-item--unavailable .basket-item__line {
+  text-decoration: line-through;
+}
+
+.basket-item--unavailable .basket-item__unit {
+  color: var(--brown);
+}
+
+.order-form__blocked {
+  margin: 0.5rem 0 0;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  background: var(--sage);
+  font-weight: 700;
+  font-size: 0.9rem;
+}

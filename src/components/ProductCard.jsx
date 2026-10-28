@@ -6,8 +6,7 @@ export default function ProductCard({ product, from }) {
   return (
     <Link to={`/product/${product.id}`} state={from ? { from } : undefined} className="product-card">
       <div className="product-card__media">
-        <img src={product.imageUrl} alt={product.name} loading="lazy" />
-        {!product.available && <span className="badge">Sold out</span>}
+        {product.thumbnail && <img src={product.thumbnail} alt={product.name} loading="lazy" />}
       </div>
       <div className="product-card__body">
         <h3 className="product-card__name">{product.name}</h3>

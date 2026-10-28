@@ -3,17 +3,54 @@ import { Link, useLocation, useParams } from 'react-router-dom'
 import Header from '../components/Header.jsx'
 import { MAX_QUANTITY, useBasket } from '../context/BasketContext.jsx'
 import { getCategory } from '../data/categories.js'
-import { getProductById } from '../data/sampleProducts.js'
+import { fetchProduct, fetchProductImage, getCachedProduct } from '../services/products.js'
 import { formatPrice } from '../utils/format.js'
 import '../styles/shop.css'
 
 export default function Product() {
   const { id } = useParams()
   const location = useLocation()
-  const product = getProductById(id)
-  const [quantity, setQuantity] = useState(1)
-  const [added, setAdded] = useState(null) // { quantity } of the last add, for the confirmation
   const { addItem } = useBasket()
+
+  // Coming from a category page the product is already cached, so it shows instantly.
+  const cached = getCachedProduct(id)
+  const [state, setState] = useState(
+    cached ? { status: 'ready', product: cached } : { status: 'loading', product: null },
+  )
+  const [attempt, setAttempt] = useState(0)
+  const [fullImage, setFullImage] = useState(null)
+  const [quantity, setQuantity] = useState(1)
+  const [added, setAdded] = useState(null) // { quantity, at } of the last add, for the confirmation
+
+  useEffect(() => {
+    let cancelled = false
+    const fresh = getCachedProduct(id)
+    setState(fresh ? { status: 'ready', product: fresh } : { status: 'loading', product: null })
+    setFullImage(null)
+    setQuantity(1)
+
+    fetchProduct(id)
+      .then((product) => {
+        if (cancelled) return
+        setState(product ? { status: 'ready', product } : { status: 'missing', product: null })
+        if (!product) return
+        // Show the thumbnail right away; swap in the full image once it's downloaded and decoded.
+        return fetchProductImage(id).then(async (image) => {
+          if (!image || cancelled) return
+          const img = new Image()
+          img.src = image
+          await img.decode().catch(() => {})
+          if (!cancelled) setFullImage(image)
+        })
+      })
+      .catch((error) => {
+        console.error(error)
+        if (!cancelled && !fresh) setState({ status: 'error', product: null })
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [id, attempt])
 
   useEffect(() => {
     if (!added) return
@@ -21,22 +58,40 @@ export default function Product() {
     return () => clearTimeout(timer)
   }, [added])
 
-  if (!product) {
+  if (state.status !== 'ready') {
     return (
       <div className="bg-page">
-        <Header backTo="/shop" backLabel="Shop" />
+        <Header backTo={location.state?.from ?? '/shop'} backLabel="Back" />
         <main className="shop">
-          <h1 className="shop__title">Product not found</h1>
-          <p className="empty">
-            <Link to="/shop" className="btn">
-              Back to the shop
-            </Link>
-          </p>
+          {state.status === 'loading' ? (
+            <div className="product" aria-busy="true" aria-label="Loading product">
+              <div className="product__media" />
+              <div className="product__info">
+                <span className="skeleton-line" />
+                <span className="skeleton-line skeleton-line--short" />
+              </div>
+            </div>
+          ) : state.status === 'error' ? (
+            <div className="empty">
+              <p className="empty__text">We couldn’t load this piece. Please check your connection.</p>
+              <button type="button" className="btn" onClick={() => setAttempt((a) => a + 1)}>
+                Try again
+              </button>
+            </div>
+          ) : (
+            <div className="empty">
+              <p className="empty__text">This piece isn’t available anymore.</p>
+              <Link to="/shop" className="btn">
+                Back to the shop
+              </Link>
+            </div>
+          )}
         </main>
       </div>
     )
   }
 
+  const { product } = state
   const category = getCategory(product.category)
   const subcategory = category?.subcategories?.find((s) => s.id === product.subcategory)
   const backTo = location.state?.from ?? `/shop/${product.category}`
@@ -52,8 +107,10 @@ export default function Product() {
       <Header backTo={backTo} backLabel={category?.name ?? 'Shop'} />
       <main className="shop product">
         <div className="product__media">
-          <img src={product.imageUrl} alt={product.name} />
-          {!product.available && <span className="badge">Sold out</span>}
+          {product.thumbnail && (
+            <img src={product.thumbnail} alt={product.name} className="product__thumb" />
+          )}
+          {fullImage && <img src={fullImage} alt="" aria-hidden="true" className="product__full" />}
         </div>
 
         <div className="product__info">
@@ -62,40 +119,34 @@ export default function Product() {
           <p className="product__price">{formatPrice(product.price)}</p>
           <p className="product__desc">{product.fullDescription}</p>
 
-          {product.available ? (
-            <div className="product__buy">
-              <div className="stepper" role="group" aria-label="Quantity">
-                <button
-                  type="button"
-                  className="stepper__btn"
-                  onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  disabled={quantity <= 1}
-                  aria-label="Decrease quantity"
-                >
-                  −
-                </button>
-                <output className="stepper__value" aria-live="polite">
-                  {quantity}
-                </output>
-                <button
-                  type="button"
-                  className="stepper__btn"
-                  onClick={() => setQuantity((q) => Math.min(MAX_QUANTITY, q + 1))}
-                  disabled={quantity >= MAX_QUANTITY}
-                  aria-label="Increase quantity"
-                >
-                  +
-                </button>
-              </div>
-              <button type="button" className="btn product__add" onClick={addToBasket}>
-                Add to basket
+          <div className="product__buy">
+            <div className="stepper" role="group" aria-label="Quantity">
+              <button
+                type="button"
+                className="stepper__btn"
+                onClick={() => setQuantity((q) => Math.max(1, q - 1))}
+                disabled={quantity <= 1}
+                aria-label="Decrease quantity"
+              >
+                −
+              </button>
+              <output className="stepper__value" aria-live="polite">
+                {quantity}
+              </output>
+              <button
+                type="button"
+                className="stepper__btn"
+                onClick={() => setQuantity((q) => Math.min(MAX_QUANTITY, q + 1))}
+                disabled={quantity >= MAX_QUANTITY}
+                aria-label="Increase quantity"
+              >
+                +
               </button>
             </div>
-          ) : (
-            <p className="product__soldout">
-              This piece is sold out for now — check back soon!
-            </p>
-          )}
+            <button type="button" className="btn product__add" onClick={addToBasket}>
+              Add to basket
+            </button>
+          </div>
         </div>
       </main>
 

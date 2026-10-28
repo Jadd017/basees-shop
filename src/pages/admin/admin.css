@@ -1,0 +1,563 @@
+/* Admin — designed for phones first: one column, big tap targets, 16px inputs (no iOS zoom). */
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.admin {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+.admin-main {
+  max-width: 44rem;
+  margin: 0 auto;
+  padding: 1rem max(1rem, env(safe-area-inset-right)) max(6rem, env(safe-area-inset-bottom))
+    max(1rem, env(safe-area-inset-left));
+}
+
+.admin-card {
+  padding: 1rem;
+  border-radius: 1rem;
+  background: rgb(201 206 178 / 0.25);
+  border: 1px solid var(--sage);
+}
+
+.admin-muted {
+  color: var(--olive);
+  font-weight: 600;
+}
+
+.admin-center {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.admin-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.admin-error,
+.admin-flash {
+  margin: 0.75rem 0;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.admin-error {
+  border: 2px solid var(--brown);
+}
+
+.admin-flash {
+  background: var(--sage);
+}
+
+.admin-hint {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--olive);
+}
+
+/* ---------- Sign-in / not authorized ---------- */
+
+.admin-gate {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+}
+
+.admin-gate__card {
+  width: 100%;
+  max-width: 24rem;
+  padding: 2rem 1.5rem;
+  text-align: center;
+  background: var(--cream);
+  box-shadow: var(--shadow-soft);
+}
+
+.admin-gate__logo {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.5rem;
+}
+
+.admin-gate__title {
+  margin: 0.25rem 0 0.5rem;
+  font-size: 1.75rem;
+}
+
+.admin-gate__btn {
+  width: 100%;
+  margin: 1rem 0 0.5rem;
+  min-height: 50px;
+}
+
+/* ---------- Top bar & tabs ---------- */
+
+.admin-bar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 56px;
+  padding: env(safe-area-inset-top) max(1rem, env(safe-area-inset-right)) 0
+    max(1rem, env(safe-area-inset-left));
+  background: var(--brown);
+  color: var(--cream);
+}
+
+.admin-bar__logo {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.3rem;
+  text-decoration: none;
+}
+
+.admin-bar__logo span {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 700;
+  padding: 0.1em 0.6em;
+  margin-left: 0.25rem;
+  border-radius: var(--radius-pill);
+  background: var(--olive);
+  vertical-align: middle;
+}
+
+.admin-bar__signout {
+  min-height: 40px;
+  padding: 0 0.9rem;
+  border: 2px solid var(--cream);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--cream);
+  font: 700 0.85rem var(--font-body);
+  cursor: pointer;
+}
+
+.admin-tabs {
+  display: flex;
+  gap: 0.25rem;
+  padding: 0.5rem max(1rem, env(safe-area-inset-left));
+  justify-content: center;
+  border-bottom: 1px solid var(--sage);
+}
+
+.admin-tabs__tab {
+  flex: 1;
+  max-width: 12rem;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-pill);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.admin-tabs__tab.active {
+  background: var(--sage);
+}
+
+/* ---------- Product list ---------- */
+
+.admin-toolbar {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
+.admin-select {
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-select select,
+.admin-field select,
+.admin-field input,
+.admin-field textarea,
+.admin-story {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  padding: 0.65rem 0.85rem;
+  border: 2px solid var(--sage);
+  border-radius: 0.75rem;
+  background: var(--cream);
+  color: var(--brown);
+  font: 1rem/1.4 var(--font-body);
+}
+
+.admin-select select:focus,
+.admin-field select:focus,
+.admin-field input:focus,
+.admin-field textarea:focus,
+.admin-story:focus {
+  outline: none;
+  border-color: var(--olive);
+}
+
+.admin-toolbar__add {
+  flex: none;
+  min-height: 48px;
+  padding: 0 1.1rem;
+}
+
+.admin-count {
+  margin: 1rem 0 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--olive);
+}
+
+.admin-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.admin-item {
+  padding: 0.75rem;
+}
+
+.admin-item__main {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  text-decoration: none;
+}
+
+.admin-item__img {
+  flex: none;
+  width: 64px;
+  height: 64px;
+  overflow: hidden;
+  border-radius: 0.6rem;
+  background: var(--sage);
+}
+
+.admin-item__img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.admin-item__text {
+  min-width: 0;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.admin-item__name {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1.05rem;
+  line-height: 1.25;
+}
+
+.admin-item__meta {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--olive);
+}
+
+.admin-item__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding-top: 0.6rem;
+  border-top: 1px solid var(--sage);
+}
+
+.admin-item__actions .switch {
+  margin-right: auto;
+}
+
+.admin-item__btn {
+  min-height: 40px;
+  padding: 0 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  border: 2px solid var(--brown);
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: var(--brown);
+  font: 700 0.85rem var(--font-body);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.admin-item__btn--danger {
+  border-color: transparent;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.admin-item__btn:disabled {
+  opacity: 0.5;
+}
+
+/* ---------- Switch ---------- */
+
+.switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  min-height: 44px;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.switch input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.switch__track {
+  position: relative;
+  flex: none;
+  width: 46px;
+  height: 28px;
+  border-radius: var(--radius-pill);
+  background: var(--sage);
+  transition: background 0.2s ease;
+}
+
+.switch__track::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--cream);
+  box-shadow: 0 1px 3px rgb(116 73 41 / 0.35);
+  transition: transform 0.2s ease;
+}
+
+.switch input:checked + .switch__track {
+  background: var(--olive);
+}
+
+.switch input:checked + .switch__track::after {
+  transform: translateX(18px);
+}
+
+.switch input:focus-visible + .switch__track {
+  outline: 3px solid var(--brown);
+  outline-offset: 2px;
+}
+
+.switch input:disabled + .switch__track {
+  opacity: 0.5;
+}
+
+.switch--large {
+  font-size: 0.95rem;
+  margin-top: 0.25rem;
+}
+
+/* ---------- Product form ---------- */
+
+.admin-form {
+  display: grid;
+  gap: 1rem;
+}
+
+.admin-form__head {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.admin-form__title {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.admin-field {
+  margin-bottom: 1rem;
+}
+
+.admin-field__label {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-weight: 700;
+  font-size: 0.95rem;
+}
+
+.admin-field textarea {
+  resize: vertical;
+}
+
+.admin-field--error input,
+.admin-field--error select,
+.admin-field--error textarea {
+  border-color: var(--brown);
+}
+
+.admin-field__error {
+  display: block;
+  margin-top: 0.3rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.admin-field__error::before {
+  content: '⚠ ';
+}
+
+.admin-price {
+  position: relative;
+}
+
+.admin-price > span {
+  position: absolute;
+  left: 0.9rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-weight: 700;
+  color: var(--olive);
+}
+
+.admin-field .admin-price input {
+  padding-left: 1.8rem;
+}
+
+/* Photo picker */
+.photo-picker {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 1;
+  max-height: 70vh;
+  padding: 0;
+  overflow: hidden;
+  border: 2px dashed var(--olive);
+  border-radius: 1rem;
+  background: var(--cream);
+  color: var(--brown);
+  cursor: pointer;
+}
+
+.photo-picker--has-image {
+  border-style: solid;
+  border-color: var(--sage);
+}
+
+.photo-picker--error {
+  border-color: var(--brown);
+}
+
+.photo-picker img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-picker__empty {
+  display: grid;
+  gap: 0.5rem;
+  justify-items: center;
+  font: 700 1rem var(--font-body);
+}
+
+.photo-picker__icon {
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--brown);
+  color: var(--cream);
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.photo-picker__overlay {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgb(246 235 217 / 0.85);
+  font: 700 1rem var(--font-body);
+}
+
+.photo-picker__replace {
+  margin-top: 0.75rem;
+}
+
+/* Sticky save bar so "Save" is always within thumb reach on a phone */
+.admin-form__actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: grid;
+  gap: 0.25rem;
+  margin: 0 -1rem;
+  padding: 0.75rem 1rem max(0.75rem, env(safe-area-inset-bottom));
+  background: rgb(246 235 217 / 0.95);
+  border-top: 1px solid var(--sage);
+}
+
+.admin-form__save {
+  width: 100%;
+  min-height: 52px;
+  font-size: 1.05rem;
+}
+
+.admin-form__delete {
+  min-height: 44px;
+  border: 0;
+  background: none;
+  color: var(--brown);
+  font: 700 0.9rem var(--font-body);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+/* Story editor */
+.admin-story {
+  min-height: 55vh;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+@media (min-width: 720px) {
+  .admin-form__actions {
+    margin: 0;
+    border: 1px solid var(--sage);
+    border-radius: 1rem;
+  }
+}

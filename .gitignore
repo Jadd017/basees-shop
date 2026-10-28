@@ -3,6 +3,7 @@ dist
 *.local
 .env
 .env.*
+!.env.example
 .firebase
 *.log
 .DS_Store

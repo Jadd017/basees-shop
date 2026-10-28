@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 
-const STORAGE_KEY = 'basees-basket'
+// v2: products moved to Firestore (sample-data baskets are dropped).
+const STORAGE_KEY = 'basees-basket-v2'
 export const MAX_QUANTITY = 20
 
 const BasketContext = createContext(null)
@@ -15,7 +16,7 @@ function loadBasket() {
 }
 
 // Each item is a snapshot of the product when it was added, plus a quantity:
-// { id, name, price, imageUrl, category, subcategory, quantity }
+// { id, name, price, thumbnail, category, subcategory, quantity, unavailable? }
 export function BasketProvider({ children }) {
   const [items, setItems] = useState(loadBasket)
 
@@ -31,7 +32,7 @@ export function BasketProvider({ children }) {
     const clamp = (q) => Math.max(1, Math.min(MAX_QUANTITY, q))
 
     const addItem = (product, quantity = 1) => {
-      const { id, name, price, imageUrl, category, subcategory } = product
+      const { id, name, price, thumbnail, category, subcategory } = product
       setItems((current) => {
         const existing = current.find((item) => item.id === id)
         if (existing) {
@@ -41,7 +42,7 @@ export function BasketProvider({ children }) {
         }
         return [
           ...current,
-          { id, name, price, imageUrl, category, subcategory, quantity: clamp(quantity) },
+          { id, name, price, thumbnail, category, subcategory, quantity: clamp(quantity) },
         ]
       })
     }
@@ -52,13 +53,29 @@ export function BasketProvider({ children }) {
       )
     }
 
+    // Bring snapshots up to date with the shop: `latest` maps id → current product, or null
+    // when it was deleted or marked unavailable.
+    const syncItems = (latest) => {
+      setItems((current) =>
+        current.map((item) => {
+          if (!(item.id in latest)) return item
+          const product = latest[item.id]
+          if (!product) return { ...item, unavailable: true }
+          const { name, price, thumbnail, category, subcategory } = product
+          return { ...item, name, price, thumbnail, category, subcategory, unavailable: false }
+        }),
+      )
+    }
+
     const removeItem = (id) => setItems((current) => current.filter((item) => item.id !== id))
     const clear = () => setItems([])
 
     const count = items.reduce((sum, item) => sum + item.quantity, 0)
-    const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0)
+    const total = items
+      .filter((item) => !item.unavailable)
+      .reduce((sum, item) => sum + item.price * item.quantity, 0)
 
-    return { items, count, total, addItem, setQuantity, removeItem, clear }
+    return { items, count, total, addItem, setQuantity, syncItems, removeItem, clear }
   }, [items])
 
   return <BasketContext.Provider value={value}>{children}</BasketContext.Provider>

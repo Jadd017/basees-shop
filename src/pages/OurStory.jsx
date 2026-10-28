@@ -1,7 +1,26 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Header from '../components/Header.jsx'
+import { DEFAULT_STORY, toParagraphs } from '../data/defaultStory.js'
+import { fetchStory } from '../services/settings.js'
+import '../styles/shop.css'
 
 export default function OurStory() {
+  const [story, setStory] = useState(null) // null while loading
+
+  useEffect(() => {
+    let cancelled = false
+    fetchStory()
+      .then((text) => !cancelled && setStory(text.trim() || DEFAULT_STORY))
+      .catch((error) => {
+        console.error(error)
+        if (!cancelled) setStory(DEFAULT_STORY)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   return (
     <>
       <Header backTo="/" backLabel="Home" />
@@ -10,20 +29,20 @@ export default function OurStory() {
           <h1 className="page__title">Our Story</h1>
           <p className="page__subtitle">بَصيص — a little glimmer of light</p>
 
-          {/* Placeholder story text — to be replaced by the owner */}
-          <p>
-            Basees began with a simple wish: to make small things that bring a little light into
-            someone’s day. Every piece is shaped by hand, slowly and with care, in a tiny home
-            studio.
-          </p>
-          <p>
-            From sculpted gypsum candles to crochet keepsakes, each creation carries a bit of
-            imagination, art, and hope — made to be gifted, cherished, and lived with every day.
-          </p>
-          <p>
-            Thank you for being part of our story. We hope you find something here that feels like
-            it was made just for you.
-          </p>
+          {story === null ? (
+            <div aria-busy="true" aria-label="Loading">
+              <span className="skeleton-line" />
+              <span className="skeleton-line" />
+              <span className="skeleton-line skeleton-line--short" />
+            </div>
+          ) : (
+            // dir="auto" lets Arabic paragraphs read right-to-left.
+            toParagraphs(story).map((paragraph, i) => (
+              <p key={i} dir="auto" className="story__paragraph">
+                {paragraph}
+              </p>
+            ))
+          )}
 
           <hr className="divider" />
 

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Header from '../components/Header.jsx'
 import { MAX_QUANTITY, useBasket } from '../context/BasketContext.jsx'
+import { fetchProduct } from '../services/products.js'
 import { formatPrice } from '../utils/format.js'
 import { buildOrderMessage, buildWhatsAppUrl } from '../utils/whatsapp.js'
 import '../styles/shop.css'
@@ -31,9 +32,26 @@ function validate(customer) {
 }
 
 export default function Basket() {
-  const { items, total, setQuantity, removeItem, clear } = useBasket()
+  const { items, total, setQuantity, syncItems, removeItem, clear } = useBasket()
   const [customer, setCustomer] = useState(loadCustomer)
   const [errors, setErrors] = useState({})
+
+  // Re-check prices and availability once when the basket opens (not on every change).
+  const [checking, setChecking] = useState(items.length > 0)
+  useEffect(() => {
+    const ids = items.map((item) => item.id)
+    if (ids.length === 0) return
+    let cancelled = false
+    Promise.all(ids.map((id) => fetchProduct(id).then((p) => [id, p])))
+      .then((entries) => !cancelled && syncItems(Object.fromEntries(entries)))
+      .catch((error) => console.error(error)) // offline: keep the saved snapshot
+      .finally(() => !cancelled && setChecking(false))
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const unavailableItems = items.filter((item) => item.unavailable)
 
   useEffect(() => {
     try {
@@ -54,6 +72,7 @@ export default function Basket() {
 
   const placeOrder = (event) => {
     event.preventDefault()
+    if (checking || unavailableItems.length > 0) return
     const found = validate(customer)
     setErrors(found)
     if (Object.keys(found).length > 0) {
@@ -89,22 +108,27 @@ export default function Basket() {
             <section className="panel" aria-label="Basket items">
               <ul className="basket__list">
                 {items.map((item) => (
-                  <li key={item.id} className="basket-item">
+                  <li
+                    key={item.id}
+                    className={`basket-item${item.unavailable ? ' basket-item--unavailable' : ''}`}
+                  >
                     <Link to={`/product/${item.id}`} className="basket-item__img">
-                      <img src={item.imageUrl} alt="" />
+                      {item.thumbnail && <img src={item.thumbnail} alt="" />}
                     </Link>
                     <div className="basket-item__info">
                       <Link to={`/product/${item.id}`} className="basket-item__name">
                         {item.name}
                       </Link>
-                      <p className="basket-item__unit">{formatPrice(item.price)} each</p>
+                      <p className="basket-item__unit">
+                        {item.unavailable ? 'No longer available' : `${formatPrice(item.price)} each`}
+                      </p>
                       <div className="basket-item__controls">
                         <div className="stepper stepper--small" role="group" aria-label={`Quantity of ${item.name}`}>
                           <button
                             type="button"
                             className="stepper__btn"
                             onClick={() => setQuantity(item.id, item.quantity - 1)}
-                            disabled={item.quantity <= 1}
+                            disabled={item.quantity <= 1 || item.unavailable}
                             aria-label="Decrease quantity"
                           >
                             −
@@ -116,7 +140,7 @@ export default function Basket() {
                             type="button"
                             className="stepper__btn"
                             onClick={() => setQuantity(item.id, item.quantity + 1)}
-                            disabled={item.quantity >= MAX_QUANTITY}
+                            disabled={item.quantity >= MAX_QUANTITY || item.unavailable}
                             aria-label="Increase quantity"
                           >
                             +
@@ -195,8 +219,17 @@ export default function Basket() {
                 />
               </Field>
 
-              <button type="submit" className="btn order-form__submit">
-                Order now on WhatsApp
+              {unavailableItems.length > 0 && (
+                <p className="order-form__blocked" role="alert">
+                  Some pieces in your basket are no longer available. Please remove them to continue.
+                </p>
+              )}
+              <button
+                type="submit"
+                className="btn order-form__submit"
+                disabled={checking || unavailableItems.length > 0}
+              >
+                {checking ? 'Checking prices…' : 'Order now on WhatsApp'}
               </button>
             </form>
           </>

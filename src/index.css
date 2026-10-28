@@ -76,6 +76,13 @@ a {
   box-shadow: 0 3px 10px rgb(116 73 41 / 0.25);
 }
 
+.btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 .btn:focus-visible {
   outline: 3px solid var(--olive);
   outline-offset: 3px;
@@ -114,6 +121,10 @@ a {
   color: var(--olive);
   font-weight: 600;
   margin: 0 0 1.5rem;
+}
+
+.story__paragraph {
+  white-space: pre-line; /* keep single line breaks typed in the admin */
 }
 
 .divider {
