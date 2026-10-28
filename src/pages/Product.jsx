@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import Header from '../components/Header.jsx'
+import ProductGallery from '../components/ProductGallery.jsx'
 import { MAX_QUANTITY, useBasket } from '../context/BasketContext.jsx'
 import { useCategories } from '../hooks/useCategories.js'
 import { findCategory, findSubcategory } from '../services/categories.js'
-import { fetchProduct, fetchProductImage, getCachedProduct } from '../services/products.js'
+import { fetchProduct, fetchProductPhotos, getCachedProduct } from '../services/products.js'
 import { formatPrice } from '../utils/format.js'
 import '../styles/shop.css'
 
@@ -20,7 +21,7 @@ export default function Product() {
     cached ? { status: 'ready', product: cached } : { status: 'loading', product: null },
   )
   const [attempt, setAttempt] = useState(0)
-  const [fullImage, setFullImage] = useState(null)
+  const [photos, setPhotos] = useState(null) // full-size photos, once loaded
   const [quantity, setQuantity] = useState(1)
   const [added, setAdded] = useState(null) // { quantity, at } of the last add, for the confirmation
 
@@ -28,7 +29,7 @@ export default function Product() {
     let cancelled = false
     const fresh = getCachedProduct(id)
     setState(fresh ? { status: 'ready', product: fresh } : { status: 'loading', product: null })
-    setFullImage(null)
+    setPhotos(null)
     setQuantity(1)
 
     fetchProduct(id)
@@ -36,13 +37,14 @@ export default function Product() {
         if (cancelled) return
         setState(product ? { status: 'ready', product } : { status: 'missing', product: null })
         if (!product) return
-        // Show the thumbnail right away; swap in the full image once it's downloaded and decoded.
-        return fetchProductImage(id).then(async (image) => {
-          if (!image || cancelled) return
+        // Show the thumbnail right away; swap in all photos once the main one is decoded,
+        // so the switch is seamless.
+        return fetchProductPhotos(id).then(async (list) => {
+          if (!list.length || cancelled) return
           const img = new Image()
-          img.src = image
+          img.src = list[0].image
           await img.decode().catch(() => {})
-          if (!cancelled) setFullImage(image)
+          if (!cancelled) setPhotos(list.map((p) => p.image))
         })
       })
       .catch((error) => {
@@ -108,12 +110,10 @@ export default function Product() {
     <div className="bg-page">
       <Header backTo={backTo} backLabel={category?.name ?? 'Shop'} />
       <main className="shop product">
-        <div className="product__media">
-          {product.thumbnail && (
-            <img src={product.thumbnail} alt={product.name} className="product__thumb" />
-          )}
-          {fullImage && <img src={fullImage} alt="" aria-hidden="true" className="product__full" />}
-        </div>
+        <ProductGallery
+          images={photos ?? (product.thumbnail ? [product.thumbnail] : [])}
+          alt={product.name}
+        />
 
         <div className="product__info">
           {subcategory && <p className="product__kicker">{subcategory.name}</p>}

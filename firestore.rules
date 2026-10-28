@@ -40,9 +40,19 @@ service cloud.firestore {
       allow delete: if isOwner();
     }
 
+    // Product photos: productImages/{productId}/photos/{photoId} — { image, order }.
+    // (The parent doc only held the old single image; kept writable so it can be cleaned up.)
     match /productImages/{productId} {
       allow read: if true;
       allow create, update, delete: if isOwner();
+
+      match /photos/{photoId} {
+        allow read: if true;
+        allow create, update: if isOwner()
+          && request.resource.data.image is string
+          && request.resource.data.order is number;
+        allow delete: if isOwner();
+      }
     }
 
     // Shop categories. The document id is permanent (products store it).

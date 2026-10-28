@@ -515,9 +515,6 @@
   font: 700 1rem var(--font-body);
 }
 
-.photo-picker__replace {
-  margin-top: 0.75rem;
-}
 
 /* Sticky save bar so "Save" is always within thumb reach on a phone */
 .admin-form__actions {
@@ -691,4 +688,147 @@
 
 .sub-add .admin-item__btn {
   min-height: 44px;
+}
+
+/* ---------- Product photos (up to 6) ---------- */
+
+.admin-photo-count {
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--olive);
+}
+
+/* One scrollable row on phones; wraps on wider screens */
+.photo-strip {
+  list-style: none;
+  display: flex;
+  gap: 0.75rem;
+  margin: 0 -1rem;
+  padding: 0.25rem 1rem 0.5rem;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+  -webkit-overflow-scrolling: touch;
+}
+
+.photo-strip--error .photo-tile__add {
+  border-color: var(--brown);
+}
+
+.photo-tile {
+  flex: none;
+  width: 108px;
+  scroll-snap-align: start;
+}
+
+.photo-tile__img {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 108px;
+  height: 108px;
+  overflow: hidden;
+  border-radius: 0.85rem;
+  background: var(--sage);
+  border: 2px solid var(--sage);
+}
+
+.photo-tile__img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.photo-tile:first-child .photo-tile__img {
+  border-color: var(--olive);
+}
+
+.photo-tile__img--busy {
+  background: var(--cream);
+  border-style: dashed;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--olive);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+
+.photo-tile__add {
+  gap: 0.35rem;
+  align-content: center;
+  padding: 0;
+  border: 2px dashed var(--olive);
+  background: var(--cream);
+  color: var(--brown);
+  font: 700 0.85rem var(--font-body);
+  cursor: pointer;
+}
+
+.photo-tile__add .photo-picker__icon {
+  width: 40px;
+  height: 40px;
+  font-size: 1.6rem;
+}
+
+.photo-tile__main {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 0.2rem 0;
+  background: var(--olive);
+  color: var(--cream);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 0.02em;
+}
+
+.photo-tile__remove {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgb(116 73 41 / 0.88);
+  color: var(--cream);
+  font: 700 1.2rem/1 var(--font-body);
+  cursor: pointer;
+}
+
+/* Bigger invisible tap area around the × */
+.photo-tile__remove::before {
+  content: '';
+  position: absolute;
+  inset: -6px;
+}
+
+.photo-tile__move {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 0.4rem;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@media (min-width: 720px) {
+  .photo-strip {
+    flex-wrap: wrap;
+    overflow: visible;
+    margin: 0;
+    padding: 0.25rem 0 0.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .photo-tile__img--busy {
+    animation: none;
+  }
 }

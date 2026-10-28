@@ -3,12 +3,19 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useCategories } from '../../hooks/useCategories.js'
 import { findCategory } from '../../services/categories.js'
 import {
-  createProduct,
+  MAX_PHOTOS,
   deleteProduct,
   fetchProductForAdmin,
-  updateProduct,
+  fetchProductPhotos,
+  newPhotoId,
+  newProductId,
+  saveProduct,
 } from '../../services/products.js'
-import { compressProductImage, formatBytes } from '../../utils/imageCompression.js'
+import {
+  compressProductImage,
+  formatBytes,
+  thumbnailFromDataUrl,
+} from '../../utils/imageCompression.js'
 
 const SHORT_MAX = 120
 
@@ -22,7 +29,7 @@ const emptyForm = {
   available: true,
 }
 
-function validate(form, hasImage, category) {
+function validate(form, photoCount, category) {
   const errors = {}
   if (!form.name.trim()) errors.name = 'Enter a name.'
   const price = Number(String(form.price).replace(',', '.'))
@@ -32,7 +39,7 @@ function validate(form, hasImage, category) {
     errors.subcategory = 'Choose a subcategory.'
   if (!form.shortDescription.trim()) errors.shortDescription = 'Enter a short description.'
   if (!form.fullDescription.trim()) errors.fullDescription = 'Enter a full description.'
-  if (!hasImage) errors.image = 'Add a photo.'
+  if (photoCount === 0) errors.image = 'Add at least one photo.'
   return errors
 }
 
@@ -44,22 +51,29 @@ export default function AdminProductForm() {
   const fileInput = useRef(null)
   const { status: categoriesStatus, categories } = useCategories()
 
+  // A new product gets its id up front, so its photos can be uploaded under it and a retried
+  // save reuses the same ids instead of duplicating.
+  const [productId] = useState(() => id ?? newProductId())
   const [form, setForm] = useState(() => ({
     ...emptyForm,
     category: location.state?.category ?? '',
   }))
   const [loadState, setLoadState] = useState(isNew ? 'ready' : 'loading') // loading | ready | missing | error
-  const [currentThumb, setCurrentThumb] = useState(null) // existing image when editing
-  const [images, setImages] = useState(null) // newly picked & compressed { thumbnail, image }
-  const [imageStatus, setImageStatus] = useState('') // '' | 'processing' | error message
+  // Photos in display order (first = main photo):
+  // { id, image, isNew, thumbnail?, bytes?, type? } — the last three only for newly picked photos
+  const [photos, setPhotos] = useState([])
+  const [savedPhotos, setSavedPhotos] = useState([]) // as loaded, to work out deletions
+  const [processing, setProcessing] = useState(0) // picked photos still being compressed
+  const [photoMessage, setPhotoMessage] = useState('')
   const [errors, setErrors] = useState({})
   const [saving, setSaving] = useState(false)
+  const [progress, setProgress] = useState('')
   const [saveError, setSaveError] = useState('')
 
   useEffect(() => {
     if (isNew) return
-    fetchProductForAdmin(id)
-      .then((product) => {
+    Promise.all([fetchProductForAdmin(id), fetchProductPhotos(id, { fresh: true })])
+      .then(([product, loadedPhotos]) => {
         if (!product) return setLoadState('missing')
         setForm({
           name: product.name ?? '',
@@ -70,7 +84,9 @@ export default function AdminProductForm() {
           fullDescription: product.fullDescription ?? '',
           available: product.available !== false,
         })
-        setCurrentThumb(product.thumbnail ?? null)
+        const list = loadedPhotos.map((p) => ({ id: p.id, image: p.image, isNew: false }))
+        setPhotos(list)
+        setSavedPhotos(list)
         setLoadState('ready')
       })
       .catch((e) => {
@@ -86,32 +102,72 @@ export default function AdminProductForm() {
     setForm((f) => ({
       ...f,
       [field]: value,
-      // Changing category clears a candle type that no longer applies.
+      // Changing category clears a subcategory that no longer applies.
       ...(field === 'category' ? { subcategory: '' } : {}),
     }))
     if (errors[field]) setErrors((e) => ({ ...e, [field]: undefined }))
   }
 
-  const pickImage = async (event) => {
-    const file = event.target.files?.[0]
-    event.target.value = '' // allow picking the same file again
-    if (!file) return
-    setImageStatus('processing')
+  // ---------- photos ----------
+
+  const pickPhotos = async (event) => {
+    const files = [...(event.target.files ?? [])]
+    event.target.value = '' // allow picking the same files again
+    if (files.length === 0) return
     setErrors((e) => ({ ...e, image: undefined }))
-    try {
-      const result = await compressProductImage(file)
-      setImages({ thumbnail: result.thumbnail, image: result.image })
-      setImageStatus('')
-    } catch (e) {
-      console.error(e)
-      setImageStatus(e.message || 'Couldn’t read this photo. Please try another one.')
+
+    const room = Math.max(0, MAX_PHOTOS - photos.length - processing)
+    const accepted = files.slice(0, room)
+    setPhotoMessage(
+      files.length > accepted.length
+        ? `A product can have up to ${MAX_PHOTOS} photos, so ${accepted.length} of the ${files.length} you chose ${accepted.length === 1 ? 'was' : 'were'} added.`
+        : '',
+    )
+
+    // One at a time keeps memory low on phones; each photo appears as soon as it's ready.
+    setProcessing((n) => n + accepted.length)
+    for (const file of accepted) {
+      try {
+        const result = await compressProductImage(file)
+        setPhotos((list) => [
+          ...list,
+          {
+            id: newPhotoId(productId),
+            image: result.image.dataUrl,
+            thumbnail: result.thumbnail.dataUrl,
+            bytes: result.image.bytes,
+            type: result.image.type,
+            isNew: true,
+          },
+        ])
+      } catch (e) {
+        console.error(e)
+        setPhotoMessage(e.message || 'Couldn’t read one of the photos. Please try another one.')
+      } finally {
+        setProcessing((n) => n - 1)
+      }
     }
   }
+
+  const movePhoto = (index, delta) => {
+    const target = index + delta
+    if (target < 0 || target >= photos.length) return
+    const next = [...photos]
+    ;[next[index], next[target]] = [next[target], next[index]]
+    setPhotos(next)
+  }
+
+  const removePhoto = (photoId) => {
+    setPhotos((list) => list.filter((p) => p.id !== photoId))
+    setPhotoMessage('')
+  }
+
+  // ---------- save / delete ----------
 
   const save = async (event) => {
     event.preventDefault()
     setSaveError('')
-    const found = validate(form, Boolean(images || currentThumb), category)
+    const found = validate(form, photos.length, category)
     setErrors(found)
     if (Object.keys(found).length > 0) {
       const first = Object.keys(found)[0]
@@ -128,14 +184,25 @@ export default function AdminProductForm() {
       fullDescription: form.fullDescription.trim(),
       available: form.available,
     }
-    const imageData = images
-      ? { thumbnail: images.thumbnail.dataUrl, image: images.image.dataUrl }
-      : null
 
     setSaving(true)
     try {
-      if (isNew) await createProduct(fields, imageData)
-      else await updateProduct(id, fields, imageData)
+      // The thumbnail always comes from the first photo; rebuild it only when that changed.
+      const main = photos[0]
+      let thumbnail = null
+      if (main.id !== savedPhotos[0]?.id) {
+        setProgress('Preparing thumbnail…')
+        thumbnail = main.thumbnail ?? (await thumbnailFromDataUrl(main.image)).dataUrl
+      }
+      await saveProduct({
+        productId,
+        isNew,
+        fields,
+        thumbnail,
+        photos,
+        removedPhotoIds: savedPhotos.filter((s) => !photos.some((p) => p.id === s.id)).map((s) => s.id),
+        onProgress: setProgress,
+      })
       navigate(`/admin${form.category ? `?category=${form.category}` : ''}`, {
         state: { flash: `${isNew ? 'Added' : 'Saved'} “${fields.name}”` },
       })
@@ -144,15 +211,17 @@ export default function AdminProductForm() {
       setSaveError(
         e.code === 'permission-denied'
           ? 'You don’t have permission to save. Check that you’re signed in with the shop account.'
-          : 'Couldn’t save. Check your connection and try again.',
+          : 'Couldn’t save. Check your connection and try again — nothing will be duplicated.',
       )
       setSaving(false)
+      setProgress('')
     }
   }
 
   const remove = async () => {
-    if (!window.confirm(`Delete “${form.name}”? This can’t be undone.`)) return
+    if (!window.confirm(`Delete “${form.name}” and all its photos? This can’t be undone.`)) return
     setSaving(true)
+    setProgress('Deleting…')
     try {
       await deleteProduct(id)
       navigate('/admin', { state: { flash: `Deleted “${form.name}”` } })
@@ -160,6 +229,7 @@ export default function AdminProductForm() {
       console.error(e)
       setSaveError('Couldn’t delete. Please try again.')
       setSaving(false)
+      setProgress('')
     }
   }
 
@@ -182,7 +252,8 @@ export default function AdminProductForm() {
     )
   }
 
-  const preview = images?.image.dataUrl ?? currentThumb
+  const canAdd = photos.length + processing < MAX_PHOTOS
+  const newBytes = photos.filter((p) => p.isNew).reduce((sum, p) => sum + p.bytes, 0)
 
   return (
     <form className="admin-form" onSubmit={save} noValidate>
@@ -193,51 +264,94 @@ export default function AdminProductForm() {
         <h1 className="admin-form__title">{isNew ? 'New product' : 'Edit product'}</h1>
       </div>
 
-      {/* Photo */}
+      {/* Photos */}
       <div className="admin-card" id="field-image">
-        <span className="admin-field__label">Photo</span>
-        <button
-          type="button"
-          className={`photo-picker${preview ? ' photo-picker--has-image' : ''}${errors.image ? ' photo-picker--error' : ''}`}
-          onClick={() => fileInput.current?.click()}
-          disabled={imageStatus === 'processing' || saving}
-        >
-          {preview ? (
-            <img src={preview} alt="Product preview" />
-          ) : (
-            <span className="photo-picker__empty">
-              <span className="photo-picker__icon" aria-hidden="true">
-                +
-              </span>
-              Choose a photo
-            </span>
+        <span className="admin-field__label">
+          Photos{' '}
+          <span className="admin-photo-count">
+            {photos.length}/{MAX_PHOTOS}
+          </span>
+        </span>
+        <p className="admin-hint admin-hint--top">
+          The first photo is the main one — it’s used for the thumbnail in the shop.
+        </p>
+
+        <ol className={`photo-strip${errors.image ? ' photo-strip--error' : ''}`}>
+          {photos.map((photo, index) => (
+            <li key={photo.id} className="photo-tile">
+              <div className="photo-tile__img">
+                <img src={photo.image} alt={`Photo ${index + 1}`} />
+                {index === 0 && <span className="photo-tile__main">Main photo</span>}
+                <button
+                  type="button"
+                  className="photo-tile__remove"
+                  onClick={() => removePhoto(photo.id)}
+                  disabled={saving}
+                  aria-label={`Delete photo ${index + 1}`}
+                >
+                  ×
+                </button>
+              </div>
+              <div className="photo-tile__move">
+                <button
+                  type="button"
+                  className="admin-order__btn"
+                  onClick={() => movePhoto(index, -1)}
+                  disabled={saving || index === 0}
+                  aria-label={`Move photo ${index + 1} left`}
+                >
+                  ←
+                </button>
+                <button
+                  type="button"
+                  className="admin-order__btn"
+                  onClick={() => movePhoto(index, 1)}
+                  disabled={saving || index === photos.length - 1}
+                  aria-label={`Move photo ${index + 1} right`}
+                >
+                  →
+                </button>
+              </div>
+            </li>
+          ))}
+          {Array.from({ length: processing }, (_, i) => (
+            <li key={`processing-${i}`} className="photo-tile">
+              <div className="photo-tile__img photo-tile__img--busy">Preparing…</div>
+            </li>
+          ))}
+          {canAdd && (
+            <li className="photo-tile">
+              <button
+                type="button"
+                className="photo-tile__img photo-tile__add"
+                onClick={() => fileInput.current?.click()}
+                disabled={saving}
+              >
+                <span className="photo-picker__icon" aria-hidden="true">
+                  +
+                </span>
+                {photos.length === 0 ? 'Add photos' : 'Add more'}
+              </button>
+            </li>
           )}
-          {imageStatus === 'processing' && (
-            <span className="photo-picker__overlay">Preparing photo…</span>
-          )}
-        </button>
+        </ol>
         <input
           ref={fileInput}
           type="file"
           accept="image/*"
-          onChange={pickImage}
+          multiple
+          onChange={pickPhotos}
           className="visually-hidden"
           tabIndex={-1}
           aria-hidden="true"
         />
-        {preview && imageStatus !== 'processing' && (
-          <button type="button" className="admin-item__btn photo-picker__replace" onClick={() => fileInput.current?.click()}>
-            {isNew && !currentThumb ? 'Choose a different photo' : 'Replace photo'}
-          </button>
-        )}
-        {images && (
+        {newBytes > 0 && (
           <p className="admin-hint">
-            Ready to upload · thumbnail {formatBytes(images.thumbnail.bytes)} · full photo{' '}
-            {formatBytes(images.image.bytes)}
-            {images.image.type === 'image/jpeg' && ' (JPEG — this browser can’t make WebP)'}
+            New photos ready to upload · {formatBytes(newBytes)} in total
+            {photos.some((p) => p.type === 'image/jpeg') && ' (JPEG — this browser can’t make WebP)'}
           </p>
         )}
-        {imageStatus && imageStatus !== 'processing' && <p className="admin-error">{imageStatus}</p>}
+        {photoMessage && <p className="admin-error admin-error--small">{photoMessage}</p>}
         {errors.image && <p className="admin-field__error">{errors.image}</p>}
       </div>
 
@@ -345,8 +459,14 @@ export default function AdminProductForm() {
       )}
 
       <div className="admin-form__actions">
-        <button type="submit" className="btn admin-form__save" disabled={saving || imageStatus === 'processing'}>
-          {saving ? 'Saving…' : isNew ? 'Add product' : 'Save changes'}
+        <button type="submit" className="btn admin-form__save" disabled={saving || processing > 0}>
+          {saving
+            ? progress || 'Saving…'
+            : processing > 0
+              ? 'Preparing photos…'
+              : isNew
+                ? 'Add product'
+                : 'Save changes'}
         </button>
         {!isNew && (
           <button type="button" className="admin-form__delete" onClick={remove} disabled={saving}>

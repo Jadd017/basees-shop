@@ -371,18 +371,6 @@
   object-fit: cover;
 }
 
-/* The full image fades in over the thumbnail once it has loaded. */
-.product__full {
-  position: absolute;
-  inset: 0;
-  animation: fade-in 0.4s ease;
-}
-
-@keyframes fade-in {
-  from {
-    opacity: 0;
-  }
-}
 
 .product__info {
   padding: 1.25rem;
@@ -535,7 +523,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .product__full,
   .product-card--skeleton .product-card__media,
   .category-card--skeleton .category-card__media,
   .product[aria-busy='true'] .product__media,

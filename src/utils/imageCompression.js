@@ -100,6 +100,12 @@ export async function compressThumbnailImage(file) {
   }
 }
 
+// New thumbnail from an already-saved photo (when a different photo becomes the main one).
+export async function thumbnailFromDataUrl(dataUrl) {
+  const blob = await (await fetch(dataUrl)).blob()
+  return compressThumbnailImage(blob)
+}
+
 export function formatBytes(bytes) {
   return bytes >= 1_000_000 ? `${(bytes / 1_000_000).toFixed(1)} MB` : `${Math.round(bytes / 1000)} KB`
 }
