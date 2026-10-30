@@ -4,14 +4,11 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // The shop admins — must match VITE_ADMIN_EMAILS in .env.
+    // The shop admins: one document per admin in admins/{uid}, added by hand in the
+    // Firebase console (no app can write there).
     function isOwner() {
       return request.auth != null
-        && request.auth.token.email_verified == true
-        && request.auth.token.email.lower() in [
-          'owner@example.com',
-          'admin@example.com'
-        ];
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
     // Catch typos in what the admin writes (e.g. a price saved as text).
@@ -65,6 +62,11 @@ service cloud.firestore {
     match /settings/{docId} {
       allow read: if true;
       allow create, update, delete: if isOwner();
+    }
+
+    // Each signed-in user may check only their own admin entry (the admin page does this).
+    match /admins/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
     }
 
     // Everything else stays locked (no rule = denied).

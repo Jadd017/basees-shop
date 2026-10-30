@@ -7,14 +7,29 @@ import {
   signInWithRedirect,
   signOut as firebaseSignOut,
 } from 'firebase/auth'
-import { ADMIN_EMAILS, app } from '../../firebase.js'
+import { doc, getDoc } from 'firebase/firestore/lite'
+import { app, db } from '../../firebase.js'
 
 const auth = getAuth(app)
 
-export function isOwner(user) {
-  return Boolean(
-    user && user.emailVerified && ADMIN_EMAILS.includes(user.email?.toLowerCase()),
-  )
+// A user is an admin when admins/{uid} exists (added by hand in the Firebase console).
+// firestore.rules does the same check, so this only decides what the page shows.
+// undefined while checking, then true/false.
+export function useIsAdmin(user) {
+  const [result, setResult] = useState({ uid: null, isAdmin: undefined })
+  useEffect(() => {
+    if (!user) return
+    let cancelled = false
+    getDoc(doc(db, 'admins', user.uid))
+      .then((snap) => snap.exists())
+      .catch(() => false) // permission denied = not an admin
+      .then((isAdmin) => !cancelled && setResult({ uid: user.uid, isAdmin }))
+    return () => {
+      cancelled = true
+    }
+  }, [user])
+  if (!user) return false
+  return result.uid === user.uid ? result.isAdmin : undefined
 }
 
 // undefined while Firebase restores the session, then a User or null.

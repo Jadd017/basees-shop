@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { Link, NavLink, Outlet } from 'react-router-dom'
-import { isOwner, signIn, signOut, useUser } from './auth.js'
+import { signIn, signOut, useIsAdmin, useUser } from './auth.js'
 import './admin.css'
 
 export default function AdminLayout() {
   const user = useUser()
+  const isAdmin = useIsAdmin(user)
   const [error, setError] = useState('')
 
   const handleSignIn = async () => {
@@ -21,7 +22,7 @@ export default function AdminLayout() {
     }
   }
 
-  if (user === undefined) {
+  if (user === undefined || (user && isAdmin === undefined)) {
     return (
       <div className="admin-gate">
         <p className="admin-muted">Loading…</p>
@@ -48,7 +49,7 @@ export default function AdminLayout() {
     )
   }
 
-  if (!isOwner(user)) {
+  if (!isAdmin) {
     return (
       <div className="admin-gate">
         <div className="admin-card admin-gate__card">
