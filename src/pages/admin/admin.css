@@ -195,6 +195,7 @@
 }
 
 .admin-select select,
+.admin-search input,
 .admin-field select,
 .admin-field input,
 .admin-field textarea,
@@ -211,12 +212,18 @@
 }
 
 .admin-select select:focus,
+.admin-search input:focus,
 .admin-field select:focus,
 .admin-field input:focus,
 .admin-field textarea:focus,
 .admin-story:focus {
   outline: none;
   border-color: var(--olive);
+}
+
+.admin-search {
+  display: block;
+  margin-top: 0.75rem;
 }
 
 .admin-toolbar__add {
@@ -284,6 +291,11 @@
   font-size: 0.85rem;
   font-weight: 600;
   color: var(--olive);
+}
+
+.admin-item__code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  letter-spacing: 0.02em;
 }
 
 .admin-item__actions {

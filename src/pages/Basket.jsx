@@ -12,15 +12,20 @@ import { buildOrderMessage, buildWhatsAppUrl } from '../utils/whatsapp.js'
 import '../styles/shop.css'
 import './Basket.css'
 
-// Remember the customer's details on this device so repeat orders are quicker.
+// Only when the customer ticks "Remember my details", their name, phone and address are kept on
+// this device: { remember: true, name, phone, address }. The note is never saved.
+// Older saves without `remember` (made before customers could choose) are ignored and removed.
 const CUSTOMER_KEY = 'basees-customer'
 const emptyCustomer = { name: '', phone: '', address: '', note: '' }
 
-function loadCustomer() {
+function loadSavedCustomer() {
   try {
-    return { ...emptyCustomer, ...JSON.parse(localStorage.getItem(CUSTOMER_KEY)) }
+    const saved = JSON.parse(localStorage.getItem(CUSTOMER_KEY))
+    if (saved?.remember !== true) return null
+    const { name = '', phone = '', address = '' } = saved
+    return { ...emptyCustomer, name, phone, address }
   } catch {
-    return emptyCustomer
+    return null
   }
 }
 
@@ -38,7 +43,9 @@ function validate(customer) {
 export default function Basket() {
   const { items, subtotal, setQuantity, syncItems, removeItem, clear } = useBasket()
   const { status: categoriesStatus, categories } = useCategories()
-  const [customer, setCustomer] = useState(loadCustomer)
+  const [savedCustomer] = useState(loadSavedCustomer)
+  const [customer, setCustomer] = useState(savedCustomer ?? emptyCustomer)
+  const [remember, setRemember] = useState(savedCustomer !== null) // unticked unless chosen before
   const [errors, setErrors] = useState({})
   const [agreed, setAgreed] = useState(false)
   const [deliveryFee, setDeliveryFee] = useState(null) // null while loading
@@ -83,13 +90,15 @@ export default function Basket() {
   // Wait for prices, the delivery fee and category names (used for labels in the message).
   const loading = checking || deliveryFee === null || categoriesStatus === 'loading'
 
+  const { name, phone, address } = customer
   useEffect(() => {
     try {
-      localStorage.setItem(CUSTOMER_KEY, JSON.stringify(customer))
+      if (remember) localStorage.setItem(CUSTOMER_KEY, JSON.stringify({ remember, name, phone, address }))
+      else localStorage.removeItem(CUSTOMER_KEY)
     } catch {
       // Not critical — the form still works.
     }
-  }, [customer])
+  }, [remember, name, phone, address])
 
   const update = (field) => (event) => {
     setCustomer((c) => ({ ...c, [field]: event.target.value }))
@@ -258,6 +267,16 @@ export default function Basket() {
                   onChange={update('note')}
                 />
               </Field>
+
+              <label className="agree remember">
+                <input
+                  type="checkbox"
+                  name="remember"
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
+                />
+                <span>Remember my details on this device</span>
+              </label>
 
               <TermsPolicies policies={policies} />
 

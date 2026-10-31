@@ -216,6 +216,7 @@ export default function AdminCategoryForm() {
           <input
             id="field-name"
             type="text"
+            maxLength={60}
             dir="auto"
             autoComplete="off"
             value={name}
@@ -303,6 +304,7 @@ export default function AdminCategoryForm() {
                 <div className="sub-list__row">
                   <input
                     type="text"
+                    maxLength={60}
                     dir="auto"
                     aria-label={`Subcategory ${index + 1} name`}
                     value={sub.name}
@@ -350,6 +352,7 @@ export default function AdminCategoryForm() {
         <div className="sub-add">
           <input
             type="text"
+            maxLength={60}
             dir="auto"
             placeholder="New subcategory name"
             aria-label="New subcategory name"

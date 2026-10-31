@@ -395,3 +395,8 @@
     transition: none;
   }
 }
+
+.remember {
+  margin-bottom: 1rem;
+  font-weight: 600;
+}

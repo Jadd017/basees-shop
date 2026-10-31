@@ -59,6 +59,7 @@ export default function AdminStory() {
           id="story-text"
           className="admin-story"
           dir="auto"
+          maxLength={20000}
           value={text}
           onChange={(e) => {
             setText(e.target.value)

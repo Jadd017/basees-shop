@@ -17,7 +17,10 @@ import {
   thumbnailFromDataUrl,
 } from '../../utils/imageCompression.js'
 
+// Text limits — firestore.rules enforces the same ones.
+const NAME_MAX = 150
 const SHORT_MAX = 120
+const FULL_MAX = 5000
 
 const emptyForm = {
   name: '',
@@ -358,7 +361,14 @@ export default function AdminProductForm() {
       {/* Details */}
       <div className="admin-card">
         <Field id="name" label="Name" error={errors.name}>
-          <input id="field-name" type="text" value={form.name} onChange={set('name')} autoComplete="off" />
+          <input
+            id="field-name"
+            type="text"
+            maxLength={NAME_MAX}
+            value={form.name}
+            onChange={set('name')}
+            autoComplete="off"
+          />
         </Field>
 
         <Field id="price" label="Price (USD)" error={errors.price}>
@@ -438,6 +448,7 @@ export default function AdminProductForm() {
             id="field-fullDescription"
             rows={5}
             dir="auto"
+            maxLength={FULL_MAX}
             value={form.fullDescription}
             onChange={set('fullDescription')}
           />

@@ -44,7 +44,7 @@ function DeliverySettings() {
   }, [])
 
   const fee = Number(String(value ?? '').replace(',', '.'))
-  const valid = value !== null && value.trim() !== '' && Number.isFinite(fee) && fee >= 0
+  const valid = value !== null && value.trim() !== '' && Number.isFinite(fee) && fee >= 0 && fee <= 1000
   const rounded = Math.round(fee * 100) / 100
   const changed = valid && rounded !== saved
 
@@ -166,6 +166,7 @@ function TermsSettings() {
             id="terms-text"
             className="admin-story admin-terms"
             dir="auto"
+            maxLength={20000}
             value={text}
             onChange={(e) => {
               setText(e.target.value)

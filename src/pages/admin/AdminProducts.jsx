@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 import { useCategories } from '../../hooks/useCategories.js'
 import { findCategory, findSubcategory } from '../../services/categories.js'
 import { deleteProduct, fetchAllProducts, setProductAvailable } from '../../services/products.js'
-import { formatPrice } from '../../utils/format.js'
+import { formatPrice, productCode } from '../../utils/format.js'
 
 export function categoryLabel(product, categories) {
   const category = findCategory(categories, product.category)
@@ -22,6 +22,7 @@ export default function AdminProducts() {
   const [error, setError] = useState('')
   const [busyId, setBusyId] = useState(null)
   const [flash, setFlash] = useState(location.state?.flash ?? '')
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     // Show the message passed from the form once, then drop it from history.
@@ -41,7 +42,11 @@ export default function AdminProducts() {
     return () => clearTimeout(timer)
   }, [flash])
 
-  const visible = (products ?? []).filter((p) => !filter || p.category === filter)
+  // Matches the start of the product code (from a WhatsApp order, with or without "#") or part of the name.
+  const term = search.trim().replace(/^#/, '').toLowerCase()
+  const matches = (p) =>
+    !term || p.id.toLowerCase().startsWith(term) || p.name.toLowerCase().includes(term)
+  const visible = (products ?? []).filter((p) => (!filter || p.category === filter) && matches(p))
 
   const toggleAvailable = async (product) => {
     setBusyId(product.id)
@@ -101,6 +106,19 @@ export default function AdminProducts() {
         </Link>
       </div>
 
+      <label className="admin-search">
+        <span className="visually-hidden">Search by code or name</span>
+        <input
+          type="search"
+          placeholder="Search by code (e.g. 2dzDPB) or name"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+      </label>
+
       {flash && (
         <p className="admin-flash" role="status">
           ✓ {flash}
@@ -114,6 +132,10 @@ export default function AdminProducts() {
 
       {products === null ? (
         <p className="admin-muted admin-center">Loading products…</p>
+      ) : visible.length === 0 && term ? (
+        <div className="admin-card admin-center">
+          <p className="admin-muted">No products match “{search.trim()}”.</p>
+        </div>
       ) : visible.length === 0 ? (
         <div className="admin-card admin-center">
           <p className="admin-muted">
@@ -142,6 +164,7 @@ export default function AdminProducts() {
                   <span className="admin-item__text">
                     <span className="admin-item__name">{product.name}</span>
                     <span className="admin-item__meta">
+                      <span className="admin-item__code">#{productCode(product.id)}</span> ·{' '}
                       {formatPrice(product.price)} · {categoryLabel(product, categories)}
                     </span>
                   </span>

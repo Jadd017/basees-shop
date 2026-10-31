@@ -11,43 +11,69 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
-    // Catch typos in what the admin writes (e.g. a price saved as text).
+    // Images are base64 data URLs; the app re-compresses anything over 700 KB
+    // (HARD_LIMIT in src/utils/imageCompression.js).
+    function validImage(s) {
+      return s is string && s.size() > 0 && s.size() <= 700000;
+    }
+
+    // Catch mistakes in what the admin writes (e.g. a price saved as text, a stray field).
+    // Text limits match the maxLength of the admin form fields.
     function validProduct(p) {
-      return p.name is string && p.name.size() > 0
-        && p.price is number && p.price > 0
-        && p.category is string
-        && (p.subcategory == null || p.subcategory is string)
-        && p.shortDescription is string
-        && p.fullDescription is string
-        && p.thumbnail is string
+      return p.keys().hasOnly(['name', 'price', 'category', 'subcategory', 'shortDescription',
+                               'fullDescription', 'thumbnail', 'available', 'createdAt'])
+        && p.name is string && p.name.size() > 0 && p.name.size() <= 150
+        && p.price is number && p.price > 0 && p.price <= 100000
+        && p.category is string && p.category.size() > 0 && p.category.size() <= 60
+        && (p.subcategory == null || (p.subcategory is string && p.subcategory.size() <= 60))
+        && p.shortDescription is string && p.shortDescription.size() <= 120
+        && p.fullDescription is string && p.fullDescription.size() <= 5000
+        && validImage(p.thumbnail)
         && p.available is bool;
     }
 
     function validCategory(c) {
-      return c.name is string && c.name.size() > 0
-        && c.order is number
-        && c.subcategories is list
-        && (!('coverImage' in c) || c.coverImage == null || c.coverImage is string);
+      return c.keys().hasOnly(['name', 'order', 'coverImage', 'subcategories'])
+        && c.name is string && c.name.size() > 0 && c.name.size() <= 60
+        && c.order is int && c.order >= 0
+        && c.subcategories is list && c.subcategories.size() <= 30
+        && (c.get('coverImage', null) == null || validImage(c.coverImage));
     }
 
-    // Anyone can read; only the admins can create, update or delete.
+    function validText(d) {
+      return d.keys().hasOnly(['text', 'updatedAt'])
+        && d.text is string && d.text.size() <= 20000
+        && d.updatedAt == request.time;
+    }
+
+    // The shop sees only available products; admins see everything.
+    // (Shop queries must therefore filter on available == true.)
     match /products/{productId} {
-      allow read: if true;
-      allow create, update: if isOwner() && validProduct(request.resource.data);
+      allow read: if resource.data.available == true || isOwner();
+      allow create: if isOwner()
+        && validProduct(request.resource.data)
+        && request.resource.data.createdAt == request.time;
+      allow update: if isOwner()
+        && validProduct(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt;
       allow delete: if isOwner();
     }
 
-    // Product photos: productImages/{productId}/photos/{photoId} — { image, order }.
-    // (The parent doc only held the old single image; kept writable so it can be cleaned up.)
+    // The parent doc only held the old single image; admins can still read/delete it for cleanup.
     match /productImages/{productId} {
-      allow read: if true;
-      allow create, update, delete: if isOwner();
+      allow read, delete: if isOwner();
 
+      // Product photos: productImages/{productId}/photos/{photoId} — { image, order }.
+      // Readable by the shop only while the product itself is available.
       match /photos/{photoId} {
-        allow read: if true;
+        allow read: if isOwner()
+          || get(/databases/$(database)/documents/products/$(productId)).data.available == true;
         allow create, update: if isOwner()
-          && request.resource.data.image is string
-          && request.resource.data.order is number;
+          && request.resource.data.keys().hasOnly(['image', 'order'])
+          && validImage(request.resource.data.image)
+          && request.resource.data.order is int
+          && request.resource.data.order >= 0
+          && request.resource.data.order < 6;
         allow delete: if isOwner();
       }
     }
@@ -59,9 +85,28 @@ service cloud.firestore {
       allow delete: if isOwner();
     }
 
-    match /settings/{docId} {
+    // Only these three settings documents exist; anything else under settings/ is denied.
+    match /settings/story {
       allow read: if true;
-      allow create, update, delete: if isOwner();
+      allow create, update: if isOwner() && validText(request.resource.data);
+      allow delete: if isOwner();
+    }
+
+    match /settings/terms {
+      allow read: if true;
+      allow create, update: if isOwner() && validText(request.resource.data);
+      allow delete: if isOwner();
+    }
+
+    match /settings/delivery {
+      allow read: if true;
+      allow create, update: if isOwner()
+        && request.resource.data.keys().hasOnly(['fee', 'updatedAt'])
+        && request.resource.data.fee is number
+        && request.resource.data.fee >= 0
+        && request.resource.data.fee <= 1000
+        && request.resource.data.updatedAt == request.time;
+      allow delete: if isOwner();
     }
 
     // Each signed-in user may check only their own admin entry (the admin page does this).

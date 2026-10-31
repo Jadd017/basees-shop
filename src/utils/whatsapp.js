@@ -1,5 +1,5 @@
 import { findCategory, findSubcategory } from '../services/categories.js'
-import { formatPrice } from './format.js'
+import { formatPrice, productCode } from './format.js'
 
 export const WHATSAPP_NUMBER = '9613560523'
 
@@ -18,11 +18,12 @@ export function buildOrderMessage({ customer, items, subtotal, deliveryFee, cate
     `Phone: ${customer.phone}`,
     `Address: ${customer.address}`,
     '',
+    // The code lets the owner look the item up in the admin and check the price.
     ...items.map(
       (item) =>
-        `• ${item.quantity} × ${itemLabel(item, categories)} (${formatPrice(item.price)} each) = ${formatPrice(
-          item.price * item.quantity,
-        )}`,
+        `• ${item.quantity} × ${itemLabel(item, categories)} [#${productCode(item.id)}] (${formatPrice(
+          item.price,
+        )} each) = ${formatPrice(item.price * item.quantity)}`,
     ),
     '',
     `Subtotal: ${formatPrice(subtotal)}`,
