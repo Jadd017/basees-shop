@@ -12,6 +12,7 @@ import {
   Timestamp,
   collection,
   deleteDoc,
+  deleteField,
   doc,
   getDoc,
   getDocs,
@@ -240,6 +241,52 @@ describe('SHOULD SUCCEED: admin', () => {
     await assertSucceeds(setDoc(doc(admin(), 'settings/terms'), { text: 'Refunds\nWithin 7 days', updatedAt: serverTimestamp() }))
     await assertSucceeds(setDoc(doc(admin(), 'settings/delivery'), { fee: 0, updatedAt: serverTimestamp() }))
     await assertSucceeds(setDoc(doc(admin(), 'settings/delivery'), { fee: 3.5, updatedAt: serverTimestamp() }))
+  })
+})
+
+// ---------------------------------------------------------------------------------------
+// shortDescription is optional: missing or empty is fine; if present it must be text ≤ 120.
+describe('Optional short description', () => {
+  // eslint-disable-next-line no-unused-vars
+  const withoutShort = ({ shortDescription, ...rest }) => rest
+
+  describe('SHOULD SUCCEED: admin', () => {
+    it('new product with no shortDescription field', () =>
+      assertSucceeds(setDoc(doc(admin(), 'products/new'), withoutShort(product({ createdAt: serverTimestamp() })))))
+    it('new product with an empty shortDescription', () =>
+      assertSucceeds(setDoc(doc(admin(), 'products/new'), product({ shortDescription: '', createdAt: serverTimestamp() }))))
+    it('clearing it on an existing product (what the form saves)', () =>
+      assertSucceeds(updateDoc(doc(admin(), 'products/visible'), { shortDescription: '' })))
+    it('removing the field from an existing product', () =>
+      assertSucceeds(updateDoc(doc(admin(), 'products/visible'), { shortDescription: deleteField() })))
+    it('still accepts normal text, up to 120 characters', () =>
+      assertSucceeds(updateDoc(doc(admin(), 'products/visible'), { shortDescription: 'x'.repeat(120) })))
+    it('shop can still read a product without one', async () => {
+      await env.withSecurityRulesDisabled((ctx) =>
+        setDoc(doc(ctx.firestore(), 'products/noShort'), withoutShort(product({ createdAt: Timestamp.now() }))),
+      )
+      await assertSucceeds(getDoc(doc(anon(), 'products/noShort')))
+    })
+  })
+
+  describe('SHOULD FAIL: not text, or too long', () => {
+    const bad = [
+      ['a number', 5],
+      ['null', null],
+      ['a boolean', true],
+      ['a list', ['cute']],
+      ['a map', { text: 'cute' }],
+    ]
+    for (const [label, value] of bad) {
+      it(`new product with shortDescription as ${label}`, () =>
+        assertFails(setDoc(doc(admin(), 'products/new'), product({ shortDescription: value, createdAt: serverTimestamp() }))))
+      it(`existing product updated to ${label}`, () =>
+        assertFails(updateDoc(doc(admin(), 'products/visible'), { shortDescription: value })))
+    }
+    it('121 characters (one over the limit)', () =>
+      assertFails(updateDoc(doc(admin(), 'products/visible'), { shortDescription: 'x'.repeat(121) })))
+    it('customer clearing it', () =>
+      assertFails(updateDoc(doc(customer(), 'products/visible'), { shortDescription: '' })))
   })
 })
 

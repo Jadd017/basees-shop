@@ -43,7 +43,6 @@ function validate(form, photoCount, category) {
   if (!form.category) errors.category = 'Choose a category.'
   else if (category?.subcategories?.length && !form.subcategory)
     errors.subcategory = 'Choose a subcategory.'
-  if (!form.shortDescription.trim()) errors.shortDescription = 'Enter a short description.'
   if (!form.fullDescription.trim()) errors.fullDescription = 'Enter a full description.'
   if (photoCount === 0) errors.image = 'Add at least one photo.'
   return errors
@@ -465,7 +464,7 @@ export default function AdminProductForm() {
 
         <Field
           id="shortDescription"
-          label="Short description"
+          label="Short description (optional)"
           hint={`Shown on the product cards · ${form.shortDescription.length}/${SHORT_MAX}`}
           error={errors.shortDescription}
         >

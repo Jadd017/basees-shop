@@ -40,7 +40,9 @@ service cloud.firestore {
         && p.price is number && p.price > 0 && p.price <= 100000
         && p.category is string && p.category.size() > 0 && p.category.size() <= 60
         && (p.subcategory == null || (p.subcategory is string && p.subcategory.size() <= 60))
-        && p.shortDescription is string && p.shortDescription.size() <= 120
+        // Optional: may be missing or empty; if present it must be text.
+        && (!('shortDescription' in p)
+            || (p.shortDescription is string && p.shortDescription.size() <= 120))
         && p.fullDescription is string && p.fullDescription.size() <= 5000
         && validImage(p.thumbnail)
         && p.available is bool;
