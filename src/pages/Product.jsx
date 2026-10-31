@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useLocation, useParams } from 'react-router-dom'
 import Header from '../components/Header.jsx'
 import ProductGallery from '../components/ProductGallery.jsx'
@@ -12,7 +12,8 @@ import '../styles/shop.css'
 export default function Product() {
   const { id } = useParams()
   const location = useLocation()
-  const { addItem } = useBasket()
+  const { items, addItem } = useBasket()
+  const lastAddAt = useRef(0)
   const { categories } = useCategories()
 
   // Coming from a category page the product is already cached, so it shows instantly.
@@ -108,8 +109,12 @@ export default function Product() {
   const backTo = location.state?.from ?? `/shop/${product.category}`
 
   const addToBasket = () => {
+    // A quick second tap (common on phones) would add the piece twice without the customer noticing.
+    if (Date.now() - lastAddAt.current < 700) return
+    lastAddAt.current = Date.now()
+    const alreadyIn = items.find((item) => item.id === product.id)?.quantity ?? 0
     addItem(product, quantity)
-    setAdded({ quantity, at: Date.now() })
+    setAdded({ quantity, inBasket: Math.min(MAX_QUANTITY, alreadyIn + quantity), at: Date.now() })
     setQuantity(1)
   }
 
@@ -165,6 +170,7 @@ export default function Product() {
             <span>
               <span aria-hidden="true">✓ </span>
               Added {added.quantity} × {product.name}
+              {added.inBasket > added.quantity && ` · ${added.inBasket} in your basket`}
             </span>
             <Link to="/basket" className="toast__link">
               View basket
