@@ -32,6 +32,13 @@ export default function Product() {
     setPhotos(null)
     setQuantity(1)
 
+    // Ask for the photos at the same time as the product, not after it: one round trip less on
+    // slow connections. The rules refuse photos of hidden or missing products, so a failure
+    // here just leaves the thumbnail in place.
+    const photosRequest = fetchProductPhotos(id).catch((error) => {
+      if (error.code !== 'permission-denied') console.error(error)
+      return []
+    })
     fetchProduct(id)
       .then((product) => {
         if (cancelled) return
@@ -39,7 +46,7 @@ export default function Product() {
         if (!product) return
         // Show the thumbnail right away; swap in all photos once the main one is decoded,
         // so the switch is seamless.
-        return fetchProductPhotos(id).then(async (list) => {
+        return photosRequest.then(async (list) => {
           if (!list.length || cancelled) return
           const img = new Image()
           img.src = list[0].image
