@@ -48,10 +48,12 @@ Photos upload one at a time with a progress bar, and the product document is wri
 
 ### 3. Security with Firestore rules (no backend)
 With no server, the database itself enforces who can do what ([`firestore.rules`](firestore.rules)):
-- anyone can **read** products, photos, categories and settings;
+- anyone can **read** categories, the three settings documents, and products that are available (with their photos). Hidden products are visible only to admins;
 - only **admins** can create, update or delete. An admin is a user whose uid has a document in an `admins` collection. That collection is managed only from the Firebase console, so no admin email addresses appear in the code;
-- writes are validated: a price must be a number, a name can't be empty, and so on;
+- writes are validated: only known fields, a price must be a positive number, text and image sizes are limited, timestamps must come from the server, and so on;
 - everything else is denied.
+
+The rules are covered by 116 automated tests ([`tests/firestore.rules.test.js`](tests/firestore.rules.test.js)) that run against the Firestore emulator. They check what should work and what must be refused, for example anonymous writes, customers changing prices, and non-admins editing products.
 
 The Firebase web config in `.env` only identifies the project and isn't a secret. Access is controlled by the rules.
 
@@ -72,7 +74,13 @@ npm run dev
 
 To use the admin panel, sign in once at `/admin`. Then, in the Firebase console, open **Firestore → Start collection `admins`** and create a document whose **id is your user UID** (shown under **Authentication → Users**).
 
-Deploy (with the [Firebase CLI](https://firebase.google.com/docs/cli)):
+Test the Firestore security rules (needs the [Firebase CLI](https://firebase.google.com/docs/cli) and **Java 11+** for the emulator; uses a local demo project, never the real database):
+
+```bash
+npm run test:rules
+```
+
+Deploy (with the Firebase CLI):
 
 ```bash
 npm run build
