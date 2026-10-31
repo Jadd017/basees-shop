@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { objectPosition } from '../utils/focus.js'
 import './ProductGallery.css'
 
 // Keeps `index` in sync with a horizontally scroll-snapping track and lets us jump to a slide.
@@ -48,7 +49,25 @@ function Arrows({ index, count, goTo, className = '' }) {
   )
 }
 
-// `images`: data URLs, main photo first. While the photos load, pass just the thumbnail.
+// ⤢ drawn as SVG: the character itself is missing from many Android fonts.
+function ExpandIcon() {
+  return (
+    <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" focusable="false">
+      <path
+        d="M9.5 2.5h4v4M13.5 2.5 9 7M6.5 13.5h-4v-4M2.5 13.5 7 9"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+// `images`: [{ src, focusX, focusY }], main photo first. While the photos load, pass just the thumbnail.
+// The big image and the thumbnails are cropped to squares around each photo's focus point;
+// the full-screen viewer shows the whole photo.
 export default function ProductGallery({ images, alt }) {
   const count = images.length
   const multi = count > 1
@@ -70,7 +89,7 @@ export default function ProductGallery({ images, alt }) {
           aria-roledescription={multi ? 'carousel' : undefined}
           aria-label={multi ? `${alt} photos` : undefined}
         >
-          {images.map((src, i) => (
+          {images.map((image, i) => (
             <button
               key={i}
               type="button"
@@ -78,10 +97,22 @@ export default function ProductGallery({ images, alt }) {
               onClick={() => setFullscreenAt(i)}
               aria-label={multi ? `Photo ${i + 1} of ${count} — open full screen` : 'Open photo full screen'}
             >
-              <img src={src} alt={i === 0 ? alt : ''} draggable="false" />
+              <img
+                src={image.src}
+                alt={i === 0 ? alt : ''}
+                draggable="false"
+                style={{ objectPosition: objectPosition(image) }}
+              />
             </button>
           ))}
         </div>
+
+        {count > 0 && (
+          <span className={`gallery__hint${multi ? ' gallery__hint--above-dots' : ''}`} aria-hidden="true">
+            <ExpandIcon />
+            Tap to view full photo
+          </span>
+        )}
 
         {multi && (
           <>
@@ -97,7 +128,7 @@ export default function ProductGallery({ images, alt }) {
 
       {multi && (
         <div className="gallery__thumbs">
-          {images.map((src, i) => (
+          {images.map((image, i) => (
             <button
               key={i}
               type="button"
@@ -106,7 +137,12 @@ export default function ProductGallery({ images, alt }) {
               aria-label={`Show photo ${i + 1}`}
               aria-current={i === index ? 'true' : undefined}
             >
-              <img src={src} alt="" draggable="false" />
+              <img
+                src={image.src}
+                alt=""
+                draggable="false"
+                style={{ objectPosition: objectPosition(image) }}
+              />
             </button>
           ))}
         </div>
@@ -163,9 +199,9 @@ function Lightbox({ images, alt, startIndex, onClose }) {
   return createPortal(
     <div className="lightbox" role="dialog" aria-modal="true" aria-label={`${alt} — photos`}>
       <div ref={trackRef} className="gallery__track lightbox__track" onScroll={onScroll}>
-        {images.map((src, i) => (
+        {images.map((image, i) => (
           <div key={i} className="lightbox__slide">
-            <img src={src} alt={i === 0 ? alt : ''} draggable="false" />
+            <img src={image.src} alt={i === 0 ? alt : ''} draggable="false" />
           </div>
         ))}
       </div>

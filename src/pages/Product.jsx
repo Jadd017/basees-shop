@@ -22,7 +22,7 @@ export default function Product() {
     cached ? { status: 'ready', product: cached } : { status: 'loading', product: null },
   )
   const [attempt, setAttempt] = useState(0)
-  const [photos, setPhotos] = useState(null) // full-size photos, once loaded
+  const [photos, setPhotos] = useState(null) // full-size photos once loaded: [{ src, focusX, focusY }]
   const [quantity, setQuantity] = useState(1)
   const [added, setAdded] = useState(null) // { quantity, at } of the last add, for the confirmation
 
@@ -52,7 +52,7 @@ export default function Product() {
           const img = new Image()
           img.src = list[0].image
           await img.decode().catch(() => {})
-          if (!cancelled) setPhotos(list.map((p) => p.image))
+          if (!cancelled) setPhotos(list.map((p) => ({ src: p.image, focusX: p.focusX, focusY: p.focusY })))
         })
       })
       .catch((error) => {
@@ -123,7 +123,12 @@ export default function Product() {
       <Header backTo={backTo} backLabel={category?.name ?? 'Shop'} />
       <main className="shop product">
         <ProductGallery
-          images={photos ?? (product.thumbnail ? [product.thumbnail] : [])}
+          images={
+            photos ??
+            (product.thumbnail
+              ? [{ src: product.thumbnail, focusX: product.focusX, focusY: product.focusY }]
+              : [])
+          }
           alt={product.name}
         />
 

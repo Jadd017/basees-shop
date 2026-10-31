@@ -102,6 +102,31 @@
   pointer-events: none;
 }
 
+/* "Tap to view full photo" on the big image; taps go through to the photo underneath */
+.gallery__hint {
+  position: absolute;
+  right: 0.6rem;
+  bottom: 0.6rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.65rem 0.3rem 0.55rem;
+  border-radius: 999px;
+  background: rgb(246 235 217 / 0.85);
+  box-shadow: 0 1px 4px rgb(116 73 41 / 0.2);
+  color: var(--brown);
+  font: 700 0.75rem/1.2 var(--font-body);
+  white-space: nowrap;
+  pointer-events: none;
+  transition: bottom 0.25s ease;
+}
+
+/* With several photos the dots sit at the bottom centre: keep the hint just above them.
+   (The page first shows only the thumbnail, so the hint glides up when the photos arrive.) */
+.gallery__hint--above-dots {
+  bottom: 1.85rem;
+}
+
 .gallery__dot {
   width: 8px;
   height: 8px;
@@ -234,7 +259,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .lightbox,
-  .gallery__dot {
+  .gallery__dot,
+  .gallery__hint {
     animation: none;
     transition: none;
   }

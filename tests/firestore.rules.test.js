@@ -244,6 +244,60 @@ describe('SHOULD SUCCEED: admin', () => {
 })
 
 // ---------------------------------------------------------------------------------------
+// Focus points (focusX/focusY, percent 0–100) on photos and on the product (main photo's focus).
+describe('Photo focus points', () => {
+  const photo = (db, id = 'p1') => doc(db, 'productImages/visible/photos', id)
+  const p = (db) => doc(db, 'products/visible')
+
+  describe('SHOULD SUCCEED: admin, valid values', () => {
+    it('new photo with a focus point (like saveProduct)', () =>
+      assertSucceeds(setDoc(photo(admin(), 'new'), { image, order: 1, focusX: 30, focusY: 70 })))
+    it('new photo without a focus point (older app versions; shop uses 50/50)', () =>
+      assertSucceeds(setDoc(photo(admin(), 'new'), { image, order: 1 })))
+    it('update order + focus of an existing photo', () =>
+      assertSucceeds(updateDoc(photo(admin()), { order: 0, focusX: 12.5, focusY: 87.5 })))
+    it('edges: 0 and 100', async () => {
+      await assertSucceeds(updateDoc(photo(admin()), { focusX: 0, focusY: 100 }))
+      await assertSucceeds(updateDoc(p(admin()), { focusX: 100, focusY: 0 }))
+    })
+    it('product: main photo focus saved with the other fields', () =>
+      assertSucceeds(updateDoc(p(admin()), { price: 12, focusX: 40, focusY: 25.5 })))
+    it('new product with a focus point', () =>
+      assertSucceeds(setDoc(doc(admin(), 'products/new'), product({ createdAt: serverTimestamp(), focusX: 50, focusY: 50 }))))
+  })
+
+  describe('SHOULD FAIL: admin, invalid values', () => {
+    const bad = [
+      ['text', '50'],
+      ['negative', -1],
+      ['over 100', 100.5],
+      ['way over 100', 250],
+      ['null', null],
+      ['boolean', true],
+      ['a list', [50, 50]],
+    ]
+    for (const [label, value] of bad) {
+      it(`photo focusX ${label} (${JSON.stringify(value)})`, () =>
+        assertFails(updateDoc(photo(admin()), { focusX: value })))
+      it(`photo focusY ${label} (${JSON.stringify(value)})`, () =>
+        assertFails(setDoc(photo(admin(), 'new'), { image, order: 1, focusX: 50, focusY: value })))
+      it(`product focusX ${label} (${JSON.stringify(value)})`, () =>
+        assertFails(updateDoc(p(admin()), { focusX: value })))
+      it(`product focusY ${label} (${JSON.stringify(value)})`, () =>
+        assertFails(updateDoc(p(admin()), { focusY: value })))
+    }
+    it('a differently named field (focus) is still refused', () =>
+      assertFails(updateDoc(photo(admin()), { focus: { x: 50, y: 50 } })))
+  })
+
+  describe('SHOULD FAIL: non-admins setting a focus point', () => {
+    it('anonymous, on a photo', () => assertFails(updateDoc(photo(anon()), { focusX: 10 })))
+    it('customer, on a photo', () => assertFails(updateDoc(photo(customer()), { focusX: 10, focusY: 10 })))
+    it('customer, on a product', () => assertFails(updateDoc(p(customer()), { focusX: 10, focusY: 10 })))
+  })
+})
+
+// ---------------------------------------------------------------------------------------
 describe('SHOULD FAIL: admin mistakes the rules catch', () => {
   const p = () => doc(admin(), 'products/visible')
   it('price saved as text', () => assertFails(updateDoc(p(), { price: '10' })))

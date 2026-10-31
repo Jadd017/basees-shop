@@ -16,6 +16,8 @@ import {
   formatBytes,
   thumbnailFromDataUrl,
 } from '../../utils/imageCompression.js'
+import { focusOf, objectPosition } from '../../utils/focus.js'
+import FocusPicker from './FocusPicker.jsx'
 
 // Text limits — firestore.rules enforces the same ones.
 const NAME_MAX = 150
@@ -63,8 +65,10 @@ export default function AdminProductForm() {
   }))
   const [loadState, setLoadState] = useState(isNew ? 'ready' : 'loading') // loading | ready | missing | error
   // Photos in display order (first = main photo):
-  // { id, image, isNew, thumbnail?, bytes?, type? } — the last three only for newly picked photos
+  // { id, image, isNew, focusX, focusY, thumbnail?, bytes?, type? } — the last three only for
+  // newly picked photos
   const [photos, setPhotos] = useState([])
+  const [focusingId, setFocusingId] = useState(null) // photo whose focus picker is open
   const [savedPhotos, setSavedPhotos] = useState([]) // as loaded, to work out deletions
   const [processing, setProcessing] = useState(0) // picked photos still being compressed
   const [photoMessage, setPhotoMessage] = useState('')
@@ -87,7 +91,7 @@ export default function AdminProductForm() {
           fullDescription: product.fullDescription ?? '',
           available: product.available !== false,
         })
-        const list = loadedPhotos.map((p) => ({ id: p.id, image: p.image, isNew: false }))
+        const list = loadedPhotos.map((p) => ({ id: p.id, image: p.image, isNew: false, ...focusOf(p) }))
         setPhotos(list)
         setSavedPhotos(list)
         setLoadState('ready')
@@ -141,6 +145,7 @@ export default function AdminProductForm() {
             bytes: result.image.bytes,
             type: result.image.type,
             isNew: true,
+            ...focusOf(null), // centre until the admin sets a focus
           },
         ])
       } catch (e) {
@@ -163,6 +168,11 @@ export default function AdminProductForm() {
   const removePhoto = (photoId) => {
     setPhotos((list) => list.filter((p) => p.id !== photoId))
     setPhotoMessage('')
+  }
+
+  const setPhotoFocus = (photoId, focus) => {
+    setPhotos((list) => list.map((p) => (p.id === photoId ? { ...p, ...focus } : p)))
+    setFocusingId(null)
   }
 
   // ---------- save / delete ----------
@@ -257,6 +267,8 @@ export default function AdminProductForm() {
 
   const canAdd = photos.length + processing < MAX_PHOTOS
   const newBytes = photos.filter((p) => p.isNew).reduce((sum, p) => sum + p.bytes, 0)
+  const focusingIndex = photos.findIndex((p) => p.id === focusingId)
+  const focusingPhoto = photos[focusingIndex]
 
   return (
     <form className="admin-form" onSubmit={save} noValidate>
@@ -276,14 +288,20 @@ export default function AdminProductForm() {
           </span>
         </span>
         <p className="admin-hint admin-hint--top">
-          The first photo is the main one — it’s used for the thumbnail in the shop.
+          The first photo is the main one — it’s used for the thumbnail in the shop. “Set focus”
+          chooses what stays in view when a photo is cropped to a square; it’s saved with the
+          product.
         </p>
 
         <ol className={`photo-strip${errors.image ? ' photo-strip--error' : ''}`}>
           {photos.map((photo, index) => (
             <li key={photo.id} className="photo-tile">
               <div className="photo-tile__img">
-                <img src={photo.image} alt={`Photo ${index + 1}`} />
+                <img
+                  src={photo.image}
+                  alt={`Photo ${index + 1}`}
+                  style={{ objectPosition: objectPosition(photo) }}
+                />
                 {index === 0 && <span className="photo-tile__main">Main photo</span>}
                 <button
                   type="button"
@@ -315,6 +333,15 @@ export default function AdminProductForm() {
                   →
                 </button>
               </div>
+              <button
+                type="button"
+                className="photo-tile__focus"
+                onClick={() => setFocusingId(photo.id)}
+                disabled={saving}
+                aria-label={`Set focus for photo ${index + 1}`}
+              >
+                Set focus
+              </button>
             </li>
           ))}
           {Array.from({ length: processing }, (_, i) => (
@@ -356,6 +383,15 @@ export default function AdminProductForm() {
         )}
         {photoMessage && <p className="admin-error admin-error--small">{photoMessage}</p>}
         {errors.image && <p className="admin-field__error">{errors.image}</p>}
+        {focusingPhoto && (
+          <FocusPicker
+            image={focusingPhoto.image}
+            initial={focusingPhoto}
+            title={focusingIndex === 0 ? 'main photo' : `photo ${focusingIndex + 1}`}
+            onSave={(focus) => setPhotoFocus(focusingPhoto.id, focus)}
+            onCancel={() => setFocusingId(null)}
+          />
+        )}
       </div>
 
       {/* Details */}

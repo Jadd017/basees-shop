@@ -869,3 +869,180 @@
     padding: 0 0.25rem;
   }
 }
+
+/* ---------- Photo focus point ---------- */
+
+.photo-tile__focus {
+  display: block;
+  width: 100%;
+  min-height: 40px;
+  margin-top: 0.4rem;
+  padding: 0 0.5rem;
+  border: 2px solid var(--olive);
+  border-radius: 999px;
+  background: var(--cream);
+  color: var(--brown);
+  font: 700 0.8rem var(--font-body);
+  cursor: pointer;
+}
+
+.photo-tile__focus:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.photo-tile__focus:focus-visible {
+  outline: 3px solid var(--olive);
+  outline-offset: 2px;
+}
+
+/* Full-screen sheet on phones, a centred card on wider screens */
+.focus-picker {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  justify-content: center;
+  overflow-y: auto;
+  background: rgb(116 73 41 / 0.55);
+  overscroll-behavior: contain;
+}
+
+.focus-picker__sheet {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  align-self: flex-start; /* grow with the content (the backdrop scrolls) rather than squeeze it */
+  width: 100%;
+  max-width: 32rem;
+  min-height: 100%;
+  padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom));
+  background: var(--cream);
+}
+
+.focus-picker__title {
+  align-self: stretch;
+  margin: 0;
+  font: 600 1.25rem var(--font-display);
+  color: var(--brown);
+}
+
+.focus-picker__hint {
+  align-self: stretch;
+  margin: 0.25rem 0 0.75rem;
+}
+
+.focus-picker__stage {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+/* The box is exactly the photo, so tap positions map straight to percentages */
+.focus-picker__photo {
+  position: relative;
+  max-width: 100%;
+  line-height: 0;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  touch-action: none; /* dragging moves the point instead of scrolling */
+  cursor: crosshair;
+  box-shadow: 0 4px 14px rgb(116 73 41 / 0.2);
+}
+
+.focus-picker__photo:focus-visible {
+  outline: 3px solid var(--olive);
+  outline-offset: 3px;
+}
+
+.focus-picker__photo img {
+  display: block;
+  max-width: 100%;
+  max-height: 42vh;
+  -webkit-user-select: none;
+  user-select: none;
+  pointer-events: none;
+}
+
+.focus-picker__marker {
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  margin: -17px 0 0 -17px;
+  border: 3px solid var(--cream);
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px var(--brown), inset 0 0 0 2px var(--brown);
+  pointer-events: none;
+}
+
+.focus-picker__marker::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  background: var(--cream);
+  box-shadow: 0 0 0 2px var(--brown);
+}
+
+.focus-picker__label {
+  margin: 1rem 0 0.4rem;
+  font-weight: 700;
+  color: var(--brown);
+}
+
+/* Same shape and corners as the product page gallery (.product__media) */
+.focus-picker__preview {
+  flex: none; /* never squeezed: it must stay exactly square */
+  width: min(62vw, 220px);
+  aspect-ratio: 1;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  background: var(--sage);
+  box-shadow: 0 6px 20px rgb(116 73 41 / 0.15);
+}
+
+.focus-picker__preview img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.focus-picker__note {
+  margin: 0.5rem 0 0;
+  text-align: center;
+}
+
+.focus-picker__actions {
+  position: sticky;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  width: 100%;
+  margin-top: auto;
+  padding-top: 1rem;
+  background: var(--cream);
+}
+
+.focus-picker__actions .btn {
+  min-height: 48px;
+}
+
+@media (min-width: 640px) {
+  .focus-picker {
+    align-items: center;
+    padding: 2rem 1rem;
+  }
+
+  .focus-picker__sheet {
+    min-height: 0;
+    padding: 1.5rem;
+    border-radius: 1.25rem;
+    box-shadow: 0 20px 50px rgb(116 73 41 / 0.35);
+  }
+}

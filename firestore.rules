@@ -17,11 +17,25 @@ service cloud.firestore {
       return s is string && s.size() > 0 && s.size() <= 700000;
     }
 
+    // Focus point of a photo (what stays in view when it's cropped to a square), in percent.
+    // Optional: older photos don't have it and the shop then uses 50/50 (the centre).
+    function validFocusValue(v) {
+      return v is number && v >= 0 && v <= 100;
+    }
+
+    function validFocus(d) {
+      return (!('focusX' in d) || validFocusValue(d.focusX))
+        && (!('focusY' in d) || validFocusValue(d.focusY));
+    }
+
     // Catch mistakes in what the admin writes (e.g. a price saved as text, a stray field).
     // Text limits match the maxLength of the admin form fields.
+    // focusX/focusY repeat the main photo's focus point, for the category cards.
     function validProduct(p) {
       return p.keys().hasOnly(['name', 'price', 'category', 'subcategory', 'shortDescription',
-                               'fullDescription', 'thumbnail', 'available', 'createdAt'])
+                               'fullDescription', 'thumbnail', 'available', 'createdAt',
+                               'focusX', 'focusY'])
+        && validFocus(p)
         && p.name is string && p.name.size() > 0 && p.name.size() <= 150
         && p.price is number && p.price > 0 && p.price <= 100000
         && p.category is string && p.category.size() > 0 && p.category.size() <= 60
@@ -63,14 +77,15 @@ service cloud.firestore {
     match /productImages/{productId} {
       allow read, delete: if isOwner();
 
-      // Product photos: productImages/{productId}/photos/{photoId} — { image, order }.
+      // Product photos: productImages/{productId}/photos/{photoId} — { image, order, focusX?, focusY? }.
       // Readable by the shop only while the product itself is available.
       match /photos/{photoId} {
         allow read: if isOwner()
           || get(/databases/$(database)/documents/products/$(productId)).data.available == true;
         allow create, update: if isOwner()
-          && request.resource.data.keys().hasOnly(['image', 'order'])
+          && request.resource.data.keys().hasOnly(['image', 'order', 'focusX', 'focusY'])
           && validImage(request.resource.data.image)
+          && validFocus(request.resource.data)
           && request.resource.data.order is int
           && request.resource.data.order >= 0
           && request.resource.data.order < 6;

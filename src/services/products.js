@@ -12,10 +12,13 @@ import {
   writeBatch,
 } from 'firebase/firestore/lite'
 import { db } from '../firebase.js'
+import { focusOf } from '../utils/focus.js'
 
 // products/{id}:   name, price, shortDescription, fullDescription, thumbnail (base64, made from
 //                  the FIRST photo), category, subcategory (or null), available, createdAt
-// productImages/{productId}/photos/{photoId}:   image (base64, full size), order (0 = main photo)
+// productImages/{productId}/photos/{photoId}:   image (base64, full size), order (0 = main photo),
+//                  focusX, focusY (percent; missing = 50/50, see utils/focus.js)
+// products/{id} also has focusX, focusY: the main photo's focus, for category cards.
 // Photos live outside the product doc so category listings only download thumbnails.
 export const MAX_PHOTOS = 6
 
@@ -103,18 +106,24 @@ export async function saveProduct({ productId, isNew, fields, thumbnail, photos,
   const newPhotos = photos.filter((p) => p.isNew)
   for (const [i, photo] of newPhotos.entries()) {
     onProgress?.(`Uploading photo ${i + 1} of ${newPhotos.length}…`)
-    await setDoc(doc(photosCol(productId), photo.id), { image: photo.image, order: photos.indexOf(photo) })
+    await setDoc(doc(photosCol(productId), photo.id), {
+      image: photo.image,
+      order: photos.indexOf(photo),
+      ...focusOf(photo),
+    })
   }
 
   onProgress?.('Saving product…')
   const batch = writeBatch(db)
   photos.forEach((photo, order) => {
-    if (!photo.isNew) batch.update(doc(photosCol(productId), photo.id), { order })
+    if (!photo.isNew) batch.update(doc(photosCol(productId), photo.id), { order, ...focusOf(photo) })
   })
   removedPhotoIds.forEach((photoId) => batch.delete(doc(photosCol(productId), photoId)))
   const productRef = doc(products, productId)
-  if (isNew) batch.set(productRef, { ...fields, thumbnail, createdAt: serverTimestamp() })
-  else batch.update(productRef, thumbnail ? { ...fields, thumbnail } : fields)
+  // The main photo's focus is repeated on the product, for the category cards.
+  const productFields = { ...fields, ...focusOf(photos[0]) }
+  if (isNew) batch.set(productRef, { ...productFields, thumbnail, createdAt: serverTimestamp() })
+  else batch.update(productRef, thumbnail ? { ...productFields, thumbnail } : productFields)
   await batch.commit()
   clearCache()
 }
