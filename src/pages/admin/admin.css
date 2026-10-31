@@ -958,7 +958,7 @@
 .focus-picker__photo img {
   display: block;
   max-width: 100%;
-  max-height: 42vh;
+  max-height: 36vh;
   -webkit-user-select: none;
   user-select: none;
   pointer-events: none;
@@ -994,22 +994,79 @@
   color: var(--brown);
 }
 
+/* Product page + shop card, side by side; both 4:5 like in the shop */
+.focus-picker__previews {
+  flex: none; /* never squeezed: the frames must keep their exact shape */
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  gap: 0.75rem;
+  align-items: end;
+  width: min(100%, 26rem);
+}
+
+.focus-picker__figure {
+  margin: 0;
+}
+
+.focus-picker__figure figcaption {
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--olive);
+}
+
 /* Same shape and corners as the product page gallery (.product__media) */
 .focus-picker__preview {
-  flex: none; /* never squeezed: it must stay exactly square */
-  width: min(62vw, 220px);
-  aspect-ratio: 1;
+  aspect-ratio: 4 / 5;
   overflow: hidden;
   border-radius: 1.25rem;
   background: var(--sage);
   box-shadow: 0 6px 20px rgb(116 73 41 / 0.15);
 }
 
-.focus-picker__preview img {
+.focus-picker__preview img,
+.focus-card__media img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* A small copy of the shop's product card (.product-card) */
+.focus-card {
+  overflow: hidden;
+  border-radius: 1rem;
+  background: rgb(246 235 217 / 0.94);
+  border: 1px solid var(--sage);
+  box-shadow: 0 4px 14px rgb(116 73 41 / 0.12);
+}
+
+.focus-card__media {
+  aspect-ratio: 4 / 5;
+  background: var(--sage);
+}
+
+.focus-card__body {
+  padding: 0.4rem 0.5rem 0.5rem;
+}
+
+.focus-card__name {
+  margin: 0;
+  font: 600 0.75rem/1.25 var(--font-display);
+  color: var(--brown);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.focus-card__price {
+  margin: 0.1rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--olive);
 }
 
 .focus-picker__note {

@@ -17,6 +17,7 @@ import {
   thumbnailFromDataUrl,
 } from '../../utils/imageCompression.js'
 import { focusOf, objectPosition } from '../../utils/focus.js'
+import { formatPrice } from '../../utils/format.js'
 import FocusPicker from './FocusPicker.jsx'
 
 // Text limits — firestore.rules enforces the same ones.
@@ -269,6 +270,8 @@ export default function AdminProductForm() {
   const newBytes = photos.filter((p) => p.isNew).reduce((sum, p) => sum + p.bytes, 0)
   const focusingIndex = photos.findIndex((p) => p.id === focusingId)
   const focusingPhoto = photos[focusingIndex]
+  const typedPrice = Number(String(form.price).replace(',', '.'))
+  const previewPrice = form.price !== '' && Number.isFinite(typedPrice) && typedPrice > 0 ? formatPrice(typedPrice) : ''
 
   return (
     <form className="admin-form" onSubmit={save} noValidate>
@@ -388,6 +391,8 @@ export default function AdminProductForm() {
             image={focusingPhoto.image}
             initial={focusingPhoto}
             title={focusingIndex === 0 ? 'main photo' : `photo ${focusingIndex + 1}`}
+            cardName={form.name.trim()}
+            cardPrice={previewPrice}
             onSave={(focus) => setPhotoFocus(focusingPhoto.id, focus)}
             onCancel={() => setFocusingId(null)}
           />

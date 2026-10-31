@@ -308,13 +308,19 @@
   box-shadow: 0 8px 20px rgb(116 73 41 / 0.18);
 }
 
+/* Every card is the same size whatever the photo: a fixed 4:5 photo area (same shape as the
+   product page gallery, so one focus point works for both) and a fixed-height text area. */
 .product-card__media {
   position: relative;
-  aspect-ratio: 1;
+  aspect-ratio: 4 / 5;
+  overflow: hidden;
   background: var(--sage);
 }
 
+/* Positioned so the photo's own size can't stretch the 4:5 box (a very tall photo would). */
 .product-card__media img {
+  position: absolute;
+  inset: 0;
   display: block;
   width: 100%;
   height: 100%;
@@ -325,15 +331,25 @@
   padding: 0.65rem 0.75rem 0.85rem;
 }
 
+/* Name and description always take exactly 2 lines (cut with "…"), so the price sits in the
+   same place on every card. Long unbroken words wrap instead of widening the card. */
 .product-card__name {
   margin: 0;
   font-size: 1rem;
   font-weight: 600;
+  line-height: 1.25;
+  height: 2.5em;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
 }
 
 .product-card__price {
   margin: 0.15rem 0 0.3rem;
   font-weight: 700;
+  line-height: 1.4;
   color: var(--olive);
 }
 
@@ -341,10 +357,12 @@
   margin: 0;
   font-size: 0.85rem;
   line-height: 1.4;
+  height: 2.8em;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
+  overflow-wrap: anywhere;
 }
 
 /* ---------- Product details ---------- */
@@ -357,7 +375,7 @@
 
 .product__media {
   position: relative;
-  aspect-ratio: 1;
+  aspect-ratio: 4 / 5; /* same shape as the category cards: one focus point works for both */
   overflow: hidden;
   border-radius: 1.25rem;
   background: var(--sage);
