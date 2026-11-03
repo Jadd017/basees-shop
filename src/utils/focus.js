@@ -1,4 +1,4 @@
-// Focus point of a product photo: the spot (in percent of the photo's width/height) that stays in
+// Focus point of a product photo or category cover: the spot (in percent of the photo's width/height) that stays in
 // view when the photo is cropped to a square. Photos saved before this existed have none: 50/50.
 export const DEFAULT_FOCUS = 50
 

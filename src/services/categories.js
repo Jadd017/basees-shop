@@ -13,6 +13,7 @@ import {
 import { db } from '../firebase.js'
 
 // categories/{id}: name, order (number), coverImage (base64 or null),
+//                  focusX, focusY (the cover's focus point; missing = 50/50),
 //                  subcategories: [{ id, name }]
 // The document id (and each subcategory id) is permanent: it's what products store in
 // `category` / `subcategory` and what appears in the URL, so renaming never breaks anything.
@@ -88,19 +89,19 @@ export async function countProducts(categoryId, subcategoryId) {
 
 // ---------- admin writes ----------
 
-export async function createCategory({ name, coverImage = null, subcategories = [] }, existing) {
+export async function createCategory({ name, coverImage = null, focusX, focusY, subcategories = [] }, existing) {
   const id = uniqueId(name, existing.map((c) => c.id), 'category')
   const order = existing.reduce((max, c) => Math.max(max, c.order ?? 0), -1) + 1
   const ref = doc(categoriesCol, id)
   await runTransaction(db, async (tx) => {
     if ((await tx.get(ref)).exists()) throw new Error('A category with this id already exists.')
-    tx.set(ref, { name, order, coverImage, subcategories })
+    tx.set(ref, { name, order, coverImage, focusX, focusY, subcategories })
   })
   clearCategoriesCache()
   return id
 }
 
-// `fields` may contain name, coverImage, subcategories.
+// `fields` may contain name, coverImage, focusX, focusY, subcategories.
 export async function updateCategory(id, fields) {
   await updateDoc(doc(categoriesCol, id), fields)
   clearCategoriesCache()

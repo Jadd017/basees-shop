@@ -17,7 +17,7 @@ service cloud.firestore {
       return s is string && s.size() > 0 && s.size() <= 700000;
     }
 
-    // Focus point of a photo (what stays in view when it's cropped to a square), in percent.
+    // Focus point of a photo or category cover (what stays in view when it's cropped to a square), in percent.
     // Optional: older photos don't have it and the shop then uses 50/50 (the centre).
     function validFocusValue(v) {
       return v is number && v >= 0 && v <= 100;
@@ -49,7 +49,8 @@ service cloud.firestore {
     }
 
     function validCategory(c) {
-      return c.keys().hasOnly(['name', 'order', 'coverImage', 'subcategories'])
+      return c.keys().hasOnly(['name', 'order', 'coverImage', 'subcategories', 'focusX', 'focusY'])
+        && validFocus(c)
         && c.name is string && c.name.size() > 0 && c.name.size() <= 60
         && c.order is int && c.order >= 0
         && c.subcategories is list && c.subcategories.size() <= 30

@@ -344,6 +344,60 @@ describe('Photo focus points', () => {
   })
 })
 
+// Focus point (focusX/focusY, percent 0–100) of a category's cover image.
+describe('Category cover focus points', () => {
+  const c = (db) => doc(db, 'categories/candles')
+
+  describe('SHOULD SUCCEED: admin', () => {
+    it('saves a focus point with the other fields (like the category form)', () =>
+      assertSucceeds(updateDoc(c(admin()), { name: 'Candles', coverImage: image, focusX: 30, focusY: 70, subcategories: [] })))
+    it('the limits 0 and 100, and decimals', async () => {
+      await assertSucceeds(updateDoc(c(admin()), { focusX: 0, focusY: 100 }))
+      await assertSucceeds(updateDoc(c(admin()), { focusX: 100, focusY: 0 }))
+      await assertSucceeds(updateDoc(c(admin()), { focusX: 12.5, focusY: 87.5 }))
+    })
+    it('new category with a focus point (like createCategory)', () =>
+      assertSucceeds(setDoc(doc(admin(), 'categories/new'), { name: 'New', order: 8, coverImage: image, focusX: 50, focusY: 50, subcategories: [] })))
+    it('category without a focus point (shop uses 50/50)', () =>
+      assertSucceeds(setDoc(doc(admin(), 'categories/new'), { name: 'New', order: 8, coverImage: image, subcategories: [] })))
+    it('reordering a category that has a focus point', async () => {
+      await assertSucceeds(updateDoc(c(admin()), { focusX: 10, focusY: 20 }))
+      await assertSucceeds(updateDoc(c(admin()), { order: 4 }))
+    })
+  })
+
+  describe('SHOULD FAIL: admin, invalid values', () => {
+    const bad = [
+      ['text', '50'],
+      ['negative', -1],
+      ['over 100', 100.5],
+      ['way over 100', 250],
+      ['null', null],
+      ['boolean', true],
+      ['a list', [50, 50]],
+    ]
+    for (const [label, value] of bad) {
+      it(`focusX ${label} (${JSON.stringify(value)})`, () =>
+        assertFails(updateDoc(c(admin()), { focusX: value })))
+      it(`focusY ${label} (${JSON.stringify(value)})`, () =>
+        assertFails(updateDoc(c(admin()), { focusY: value })))
+    }
+    it('valid focusX does not excuse a bad focusY', () =>
+      assertFails(updateDoc(c(admin()), { focusX: 50, focusY: 101 })))
+    it('new category with a bad focus point', () =>
+      assertFails(setDoc(doc(admin(), 'categories/new'), { name: 'New', order: 8, coverImage: null, focusX: '50', subcategories: [] })))
+    it('a differently named field (focus) is still refused', () =>
+      assertFails(updateDoc(c(admin()), { focus: { x: 50, y: 50 } })))
+  })
+
+  describe('SHOULD FAIL: non-admins setting a focus point', () => {
+    it('anonymous', () => assertFails(updateDoc(c(anon()), { focusX: 10, focusY: 10 })))
+    it('customer', () => assertFails(updateDoc(c(customer()), { focusX: 10, focusY: 10 })))
+    it('customer, creating a category with one', () =>
+      assertFails(setDoc(doc(customer(), 'categories/x'), { name: 'X', order: 9, coverImage: null, focusX: 10, focusY: 10, subcategories: [] })))
+  })
+})
+
 // ---------------------------------------------------------------------------------------
 describe('SHOULD FAIL: admin mistakes the rules catch', () => {
   const p = () => doc(admin(), 'products/visible')

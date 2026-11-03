@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import Header from '../components/Header.jsx'
 import { useCategories } from '../hooks/useCategories.js'
+import { objectPosition } from '../utils/focus.js'
 import '../styles/shop.css'
 
 export default function Shop() {
@@ -41,7 +42,14 @@ export default function Shop() {
               <li key={category.id}>
                 <Link to={`/shop/${category.id}`} className="category-card">
                   <span className="category-card__media">
-                    {category.coverImage && <img src={category.coverImage} alt="" loading="lazy" />}
+                    {category.coverImage && (
+                      <img
+                        src={category.coverImage}
+                        alt=""
+                        loading="lazy"
+                        style={{ objectPosition: objectPosition(category) }}
+                      />
+                    )}
                   </span>
                   <span className="category-card__body">
                     <span className="category-card__name" dir="auto">

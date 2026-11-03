@@ -9,7 +9,9 @@ import {
   uniqueId,
   updateCategory,
 } from '../../services/categories.js'
+import { focusOf, objectPosition } from '../../utils/focus.js'
 import { compressThumbnailImage, formatBytes } from '../../utils/imageCompression.js'
+import FocusPicker from './FocusPicker.jsx'
 
 const productsLabel = (n) => `${n} ${n === 1 ? 'product' : 'products'}`
 const productsAre = (n) => `${productsLabel(n)} ${n === 1 ? 'is' : 'are'}`
@@ -24,6 +26,8 @@ export default function AdminCategoryForm() {
 
   const [name, setName] = useState('')
   const [cover, setCover] = useState(null) // base64 or null
+  const [coverFocus, setCoverFocus] = useState(() => focusOf(null)) // { focusX, focusY }
+  const [focusing, setFocusing] = useState(false) // focus picker open
   const [coverInfo, setCoverInfo] = useState(null) // { bytes, type } of a newly picked cover
   const [coverStatus, setCoverStatus] = useState('') // '' | 'processing' | error message
   const [subs, setSubs] = useState([]) // [{ id, name }]
@@ -41,6 +45,7 @@ export default function AdminCategoryForm() {
     if (isNew || loaded || !original) return
     setName(original.name)
     setCover(original.coverImage ?? null)
+    setCoverFocus(focusOf(original))
     setSubs(original.subcategories ?? [])
     setLoaded(true)
   }, [isNew, loaded, original])
@@ -53,6 +58,7 @@ export default function AdminCategoryForm() {
     try {
       const result = await compressThumbnailImage(file)
       setCover(result.dataUrl)
+      setCoverFocus(focusOf(null)) // a new photo starts centred
       setCoverInfo({ bytes: result.bytes, type: result.type })
       setCoverStatus('')
     } catch (e) {
@@ -125,7 +131,7 @@ export default function AdminCategoryForm() {
     setSaving(true)
     try {
       if (isNew) {
-        await createCategory({ name: name.trim(), coverImage: cover, subcategories: cleanSubs }, categories)
+        await createCategory({ name: name.trim(), coverImage: cover, ...coverFocus, subcategories: cleanSubs }, categories)
       } else {
         // Re-check removed subcategories in case products were added meanwhile.
         const removed = (original.subcategories ?? []).filter((s) => !cleanSubs.some((c) => c.id === s.id))
@@ -137,7 +143,7 @@ export default function AdminCategoryForm() {
             return
           }
         }
-        await updateCategory(id, { name: name.trim(), coverImage: cover, subcategories: cleanSubs })
+        await updateCategory(id, { name: name.trim(), coverImage: cover, ...coverFocus, subcategories: cleanSubs })
       }
       navigate('/admin/categories', {
         state: { flash: `${isNew ? 'Added' : 'Saved'} “${name.trim()}”` },
@@ -235,26 +241,38 @@ export default function AdminCategoryForm() {
 
         <span className="admin-field__label">Cover image (optional)</span>
         <div className="cover-picker">
-          <button
-            type="button"
-            className={`photo-picker cover-picker__preview${cover ? ' photo-picker--has-image' : ''}`}
-            onClick={() => fileInput.current?.click()}
-            disabled={coverStatus === 'processing' || saving}
-          >
-            {cover ? (
-              <img src={cover} alt="Cover preview" />
-            ) : (
-              <span className="photo-picker__empty">
-                <span className="photo-picker__icon" aria-hidden="true">
-                  +
+          <div className="cover-picker__main">
+            <button
+              type="button"
+              className={`photo-picker cover-picker__preview${cover ? ' photo-picker--has-image' : ''}`}
+              onClick={() => fileInput.current?.click()}
+              disabled={coverStatus === 'processing' || saving}
+            >
+              {cover ? (
+                <img src={cover} alt="Cover preview" style={{ objectPosition: objectPosition(coverFocus) }} />
+              ) : (
+                <span className="photo-picker__empty">
+                  <span className="photo-picker__icon" aria-hidden="true">
+                    +
+                  </span>
+                  Choose a photo
                 </span>
-                Choose a photo
-              </span>
+              )}
+              {coverStatus === 'processing' && (
+                <span className="photo-picker__overlay">Preparing photo…</span>
+              )}
+            </button>
+            {cover && (
+              <button
+                type="button"
+                className="photo-tile__focus"
+                onClick={() => setFocusing(true)}
+                disabled={coverStatus === 'processing' || saving}
+              >
+                Set focus
+              </button>
             )}
-            {coverStatus === 'processing' && (
-              <span className="photo-picker__overlay">Preparing photo…</span>
-            )}
-          </button>
+          </div>
           {cover && (
             <div className="cover-picker__actions">
               <button type="button" className="admin-item__btn" onClick={() => fileInput.current?.click()}>
@@ -265,6 +283,7 @@ export default function AdminCategoryForm() {
                 className="admin-item__btn admin-item__btn--danger"
                 onClick={() => {
                   setCover(null)
+                  setCoverFocus(focusOf(null))
                   setCoverInfo(null)
                 }}
               >
@@ -289,6 +308,20 @@ export default function AdminCategoryForm() {
           </p>
         )}
         {coverStatus && coverStatus !== 'processing' && <p className="admin-error">{coverStatus}</p>}
+        {focusing && cover && (
+          <FocusPicker
+            variant="category"
+            image={cover}
+            initial={coverFocus}
+            title="cover image"
+            cardName={name.trim()}
+            onSave={(focus) => {
+              setCoverFocus(focus)
+              setFocusing(false)
+            }}
+            onCancel={() => setFocusing(false)}
+          />
+        )}
       </div>
 
       <div className="admin-card">

@@ -1,11 +1,13 @@
 import { useEffect, useId, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { focusOf, objectPosition } from '../../utils/focus.js'
+import '../../styles/shop.css'
 
 // Lets the admin choose a photo's focus point: tap or drag on the whole photo, and the previews
 // update live: the product page gallery and a shop card, both 4:5 like in the shop.
 // `cardName` / `cardPrice` fill the card preview. Arrow keys move the point too (Shift = bigger steps).
-export default function FocusPicker({ image, initial, title, cardName, cardPrice, onSave, onCancel }) {
+// `variant="category"` is for category covers: the only preview is a real /shop category card.
+export default function FocusPicker({ image, initial, title, cardName, cardPrice, variant, onSave, onCancel }) {
   const [focus, setFocus] = useState(() => focusOf(initial))
   const photoRef = useRef(null)
   const titleId = useId()
@@ -88,27 +90,48 @@ export default function FocusPicker({ image, initial, title, cardName, cardPrice
         </div>
 
         <p className="focus-picker__label">What customers see</p>
-        <div className="focus-picker__previews">
-          <figure className="focus-picker__figure">
-            <div className="focus-picker__preview">
-              <img src={image} alt="Product page preview" style={{ objectPosition: objectPosition(focus) }} />
-            </div>
-            <figcaption>Product page</figcaption>
-          </figure>
-          <figure className="focus-picker__figure">
-            <div className="focus-card" aria-hidden="true">
-              <div className="focus-card__media">
-                <img src={image} alt="" style={{ objectPosition: objectPosition(focus) }} />
+        {variant === 'category' ? (
+          <div className="focus-picker__previews focus-picker__previews--category">
+            <figure className="focus-picker__figure">
+              <div className="category-card" aria-hidden="true">
+                <span className="category-card__media">
+                  <img src={image} alt="" style={{ objectPosition: objectPosition(focus) }} />
+                </span>
+                <span className="category-card__body">
+                  <span className="category-card__name" dir="auto">
+                    {cardName || 'Category name'}
+                  </span>
+                  <span className="category-card__cta">Explore →</span>
+                </span>
               </div>
-              <div className="focus-card__body">
-                <p className="focus-card__name">{cardName || 'Product name'}</p>
-                {cardPrice && <p className="focus-card__price">{cardPrice}</p>}
-              </div>
+              <figcaption>Shop page</figcaption>
+            </figure>
+          </div>
+        ) : (
+          <>
+            <div className="focus-picker__previews">
+              <figure className="focus-picker__figure">
+                <div className="focus-picker__preview">
+                  <img src={image} alt="Product page preview" style={{ objectPosition: objectPosition(focus) }} />
+                </div>
+                <figcaption>Product page</figcaption>
+              </figure>
+              <figure className="focus-picker__figure">
+                <div className="focus-card" aria-hidden="true">
+                  <div className="focus-card__media">
+                    <img src={image} alt="" style={{ objectPosition: objectPosition(focus) }} />
+                  </div>
+                  <div className="focus-card__body">
+                    <p className="focus-card__name">{cardName || 'Product name'}</p>
+                    {cardPrice && <p className="focus-card__price">{cardPrice}</p>}
+                  </div>
+                </div>
+                <figcaption>Shop card</figcaption>
+              </figure>
             </div>
-            <figcaption>Shop card</figcaption>
-          </figure>
-        </div>
-        <p className="admin-hint focus-picker__note">Tapping the photo in the shop still shows all of it.</p>
+            <p className="admin-hint focus-picker__note">Tapping the photo in the shop still shows all of it.</p>
+          </>
+        )}
 
         <div className="focus-picker__actions">
           <button type="button" className="btn btn--ghost" onClick={onCancel}>
