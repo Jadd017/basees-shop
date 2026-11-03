@@ -1,7 +1,7 @@
 /* ---------- Full-page background (category & product pages) ---------- */
 
 /*
-  category-bg.jpg is portrait (1414×2000) with decorations around its edges.
+  category-bg-v2.jpg is portrait (1414×2000) with decorations around its edges.
   Phones: cover the screen. Wider screens: show it at full height without
   stretching or cropping, centered, with cream filling the sides.
   A fixed pseudo-element is used instead of background-attachment: fixed,
@@ -19,7 +19,7 @@
   position: fixed;
   inset: 0;
   z-index: -1;
-  background: var(--cream) url('/category-bg.jpg') center / cover no-repeat;
+  background: var(--cream) url('/category-bg-v2.jpg') center / cover no-repeat;
 }
 
 @media (min-aspect-ratio: 1414 / 2000) {
